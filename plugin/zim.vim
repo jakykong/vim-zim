@@ -49,16 +49,16 @@ endfunction
 "Wiki formatting commands
 "Bold a range
 vmap <Leader>wb :s/\%V.*\%V[^\s]/**\0**/g<CR>:nohl<CR>
-nmap <Leader>wb :s/.*[^\s]/**\0**/<CR>:nohl<CR>
-"Italicize a range
+nmap <Leader>wb :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/\*\*\0\*\*/<CR>:nohl<CR>``ll
+"Italicize a range (normal: Italicize entire line, after bullet if one is present)
 vmap <Leader>wi :s/\%V.*\%V[^\s]/\/\/\0\/\//g<CR>:nohl<CR>
-nmap <Leader>wi :s/.*[^\s]/'''\0'''/<CR>:nohl<CR>
+nmap <Leader>wi :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/\/\/\0\/\//<CR>:nohl<CR>``ll
 "Highlight a range
 vmap <Leader>wh :s/\%V.*\%V[^\s]/__\0__/g<CR>:nohl<CR>
-nmap <Leader>wh :s/.*[^\s]/__\0__/<CR>:nohl<CR>
+nmap <Leader>wh :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/__\0__/<CR>:nohl<CR>``ll
 "Strike a range
 vmap <Leader>ws :s/\%V.*\%V[^\s]/~~\0~~/g<CR>:nohl<CR>
-nmap <Leader>ws :s/.*[^\s]/~~\0~~/<CR>:nohl<CR>
+nmap <Leader>ws :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/~~\0~~/<CR>:nohl<CR>``ll
 "<num>Header 1 to 5 (1=largest)
 nnoremap <Leader>wh :<C-U>let c=v:count1<CR>I======= <ESC>0:execute "normal! ".c."x"<CR>0ve"zy$a <ESC>"zp0:nohl<CR>
 " Change [ ] to *
