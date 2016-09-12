@@ -13,6 +13,8 @@
 " Known Bugs:
 " * Does not currently support Linux strftime()
 " * Zim issue: New files aren't shown in Zim index until restart of zim.
+" * Doesn't correctly add bullets, numbering, or checkboxes on <CR> from
+"   visual mode
 "
 "
 
