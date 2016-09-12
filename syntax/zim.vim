@@ -23,8 +23,14 @@ highlight zmWBld gui=bold
 syn match zmWItl +//.*//+
 highlight zmWItl gui=italic
 
-syn match zmBullet /^\s\+\(\[[* ]\]\|\*\)\(\s\|$\)/
+syn match zmBullet /^\s*\(\[[* ]\]\|\*\)\(\s\|$\)/
 highlight zmBullet gui=bold
+
+syn match zmWHlt /__.*__/
+highlight zmWHlt gui=inverse
+
+syn match zmWStr /~~.*~~/
+highlight zmWStr gui=underline
 
 
 
