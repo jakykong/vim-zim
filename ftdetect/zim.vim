@@ -1,5 +1,5 @@
 
-function! s:ftdetect_zim()
+function! Ftdetect_zim()
     " No change if we didn't start with a txt file
     if &ft != 'text'
         return
@@ -10,6 +10,6 @@ function! s:ftdetect_zim()
 endfunction
 
 
-au BufNewFile,BufRead *.txt call s:ftdetect_zim()
+au BufNewFile,BufRead *.txt call Ftdetect_zim()
 
 
