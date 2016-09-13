@@ -29,7 +29,7 @@ highlight zmBullet gui=bold
 syn match zmWHlt /__.*__/
 highlight zmWHlt gui=inverse
 
-syn match zmWStr /~~.*~~/
+syn match zmWStr /\~\~.*\~\~/
 highlight zmWStr gui=underline
 
 
