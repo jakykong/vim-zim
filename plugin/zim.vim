@@ -59,8 +59,8 @@ nnoremap <Leader>wi :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/\/\/\0\/\//<CR>:nohl<CR>
 vnoremap <Leader>wh :s/\%V.*\%V[^\s]/__\0__/g<CR>:nohl<CR>
 nnoremap <Leader>wh :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/__\0__/<CR>:nohl<CR>``ll
 "Strike a range
-vnoremap <Leader>ws :s/\%V.*\%V[^\s]/~~\0~~/g<CR>:nohl<CR>
-nnoremap <Leader>ws :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/~~\0~~/<CR>:nohl<CR>``ll
+vnoremap <Leader>ws :s/\%V.*\%V[^\s]/\~\~\0\~\~/g<CR>:nohl<CR>
+nnoremap <Leader>ws :s/^\s*\(\*\s\\|\[[* ]\]\s\)\?\zs.*/\~\~\0\~\~/<CR>:nohl<CR>``ll
 "<num>Header 1 to 5 (1=largest)
 nnoremap <Leader>wh :<C-U>let c=v:count1<CR>I======= <ESC>0:execute "normal! ".c."x"<CR>0ve"zy$a <ESC>"zp0:nohl<CR>
 " Change [ ] to *
