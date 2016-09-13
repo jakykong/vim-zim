@@ -1,0 +1,40 @@
+Zim Desktop Wiki plugin for Vim
+================================
+Author: Jack Mudge <jakykong@theanythingbox.com>
+URL: https://github.com/jakykong/vim-zim
+Version: 0.1
+License: Public Domain
+
+This Zim plugin provides the following additions to Vim for use with Zim wiki files:
+* Syntax highlighting and filetype detection for Zim files
+* Commands to bold, italicize, strike, or mark text.
+* A command to add a header to new Zim files.
+
+A typical workflow for use with this is one of:
+* Create files in Zim, and use Tools->Edit Source to access Vim.
+* Create files in Vim, and (re)start Zim to read them.
+
+Known issues:
+* Zim header command uses strftime, but due to working around Microsoft issues,
+  it presently only supports Pacific Time Zone, and does not support Linux.
+  Adding time zones is easy (look at the plugin file), so is adding Linux support
+  (place and method marked in the same file), I just haven't needed to.
+* Not an issue with the plugin, but with Zim: There is no way to refresh the index
+  in Zim without restarting Zim. This implies that new files added from Vim will
+  not be visible there until it's restarted.
+* No helpfile written yet.
+
+Commands:
+<Leader>wh - Header (accepts count 1-5): ====HEADER==== syntax in file (Normal mode)
+<Leader>wh - Highlight __Highlighted Text__ syntax (Visual mode)
+<Leader>wb - Bold text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
+<Leader>wi - Italic text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
+<Leader>ws - Strike text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
+:CreateZimHeader() - Creates a Zim header in the current document. Required for Zim to correctly render new files.
+
+
+
+Changelog:
+==========
+2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
+    * Initial commit and upload to Github.
