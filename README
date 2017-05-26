@@ -25,12 +25,20 @@ Known issues:
 * No helpfile written yet.
 
 Commands:
-<Leader>wh - Header (accepts count 1-5): ====HEADER==== syntax in file (Normal mode)
+<Leader>wt - Header (accepts count 1-5): ====HEADER==== syntax in file (Normal mode)
 <Leader>wh - Highlight __Highlighted Text__ syntax (Visual mode)
 <Leader>wb - Bold text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
 <Leader>wi - Italic text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
 <Leader>ws - Strike text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-:CreateZimHeader() - Creates a Zim header in the current document. Required for Zim to correctly render new files.
+<Leader>wl - Make current line a list item
+<Leader>wc - Put empty checkbox on the current line 
+<F12>      - 'yes' Put validated checkbox on the current line
+<S-F12>    - 'no'  Put crossed checkbox on the current line
+<Leader><CR>- Detect if inside a list and continue to insert bullets
+<CR>        - Same as above if the cursor is at the end of the line
+<Leader>wH or
+:CreateZimHeader()
+           - Creates a Zim header in the current document. Required for Zim to correctly render new files.
 
 
 
@@ -38,3 +46,13 @@ Changelog:
 ==========
 2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
     * Initial commit and upload to Github.
+2017-05-25 - luffah <luffah@runbox.com>
+   * - (change) Header accept user dialog instead of count
+   * Mod. CreateZimHeader
+      + minimal support of Linux strftime() + automatic title
+   * Keymappings
+      + limited to zim buffers + stored in g:zim_keymapping
+   * Add filetype detection based on path
+   * Add a gettext like function
+   * In insert mode : add bullet, numbering, or checkbox
+     on <Leader><CR> with the result of ZimNextBullet
