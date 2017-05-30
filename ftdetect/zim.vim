@@ -1,4 +1,4 @@
-let g:zim_notebook=get(g:,'zim_notebook',"Notebooks")
+let g:zim_notebooks_dir=get(g:,'zim_notebooks_dir',expand("~/Notebooks"))
 
 function! Ftdetect_zim()
   " No change if we didn't start with a txt file
@@ -6,7 +6,7 @@ function! Ftdetect_zim()
     return
   endif
   if getline(1) =~ "Content-Type: text/x-zim-wiki"
-        \ || expand('%') =~ g:zim_notebook
+        \ || expand('%') =~ g:zim_notebooks_dir
     set ft=zim
   endif
 endfunction

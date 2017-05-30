@@ -51,13 +51,19 @@
 
 ""
 " Actions
-" 
+"
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ '<cr>':{
-      \   'i' : '<Esc>:call ZimCR()<Cr>a'
+      \   'i' : '<bar><Esc>:call ZimCR("<bar>")<Cr>i'
+      \ },
+      \ 'jump':{
+      \   'n' : ':call ZimJumpToLinkUnderCursor()<Cr>'
+      \ },
+      \ 'jump_back':{
+      \   'n' : ':exe "buffer ".b:zim_last_backlink <Cr>'
       \ },
       \ 'continue_list':{
-      \   'n' : ':put=ZimNextBullet()<Cr>$a'
+      \   'n' : ':put=ZimNextBullet(getline("."))<Cr>$a'
       \ },
       \ 'bold':{
       \   'v': ':call ZimToggleStyleBlock("**")<CR>',
@@ -104,6 +110,8 @@ let g:zim_edit_actions=get(g:,'zim_edit_actions', {
 let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ '<cr>':'<CR>',
       \ 'continue_list':'<Leader><CR>',
+      \ 'jump':'<Leader>g',
+      \ 'jump_back':'<Leader>G',
       \ 'bold':'<Leader>wb',
       \ 'italic':'<Leader>wi',
       \ 'highlight':'<Leader>wh',
@@ -117,7 +125,37 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ 'checkbox_no':'<S-F12>'
       \ })
 
-function! s:setKeymappings()
+
+" You can choose where to begin note editing
+" skip header
+let g:zim_open_skip_header=1
+
+" Succession of movements to determine the cursor position on openning.
+" It make possible cheaty movements,as might be in French Unemployment Agency. 
+" Given the cursor at the first line, you can say go forward to 'Title 4';
+"  'no, at the begining of the file ('.'); 'Title 3'; '10 line before';
+"  'foo'; 'from now you go backward when you search';
+"  'Title 3'; 'tofu'
+"
+" Here the syntax.
+" dict    { 'init': line_position init, 'sens' : (-1 or 1) for searching text pattern }
+" string  text pattern  e.g. Creation
+" integer line delta  e.g. -1 to go back 1 line
+" integer line delta  e.g. -1 to go back 1 line
+"
+" Go to the last title and jump 2 line 
+let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]
+
+" Go to the first title and jump 2 line after
+" let g:zim_open_jump_to=["==.*==", 2]
+
+function! s:setBufferSpecific()
+  " set buffer properties
+  setlocal tabstop=4
+  setlocal softtabstop=4
+  setlocal shiftwidth=4
+  
+  " add key mappings
   for l:k in keys(g:zim_edit_actions)
     if has_key(g:zim_keymapping,l:k)
       for l:m in keys(g:zim_edit_actions[l:k])
@@ -125,8 +163,40 @@ function! s:setKeymappings()
       endfor
     endif
   endfor
+  
+  " add commamds
+  command! -buffer -nargs=* ZimGrepThis :call ZimSearchInNotebook(expand('<cword>'))
+  command! -buffer -nargs=* ZimListThis :call ZimListNotes(g:zim_notebook,expand('<cword>'))
+  
+  let l:i=line('.')
+  let l:step=1
+  if l:i == 1
+    let l:e=line('$')
+    for l:j in g:zim_open_jump_to
+      if type(l:j) == type(0)
+        let l:i+=l:j
+      elseif type(l:j) == type({})
+        if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
+        if has_key(l:j, 'sens') | let l:step=l:j['sens'] | endif
+      else
+        while l:i > 0 && l:i <= l:e && getline(l:i) !~ l:j
+          let l:i+=l:step
+        endwhile
+      endif
+      if l:i <= 0 | let l:i = 1 | break | endif
+      if l:i > l:e | let l:i = l:e | break | endif
+		  unlet l:j  " E706 without this
+    endfor
+  endif
+  if l:i == 1 && g:zim_open_skip_header
+    while getline(l:i) =~ 
+          \ '^\(Content-Type\|Wiki-Format\|Creation-Date\):'
+      let l:i+=1
+    endwhile
+  endif
+  exe l:i
 endfu
-autocmd! Filetype zim call s:setKeymappings()
+autocmd! Filetype zim call s:setBufferSpecific()
 
 "'"'""'"'"'"'"'"'"'"'"'"'"'"'"'"
 ""
@@ -213,13 +283,13 @@ endfu
 " @param string bul The bullet : **; [ ]...
 function! ZimBullet(bul)
   call setline('.',
-        \ substitute(getline('.'),'^\(\s*\)\(\[.\]\)\?\(*\)\?','\1'.a:bul,''))
+        \ substitute(getline('.'),'^\(\s*\)\(\[.\]\)\?\(*\)\?\s*','\1'.a:bul.' ',''))
 endfu
 
 " Get the bullet (list, numbered list, checkbox) for the next line
 " given the current line
-function! ZimNextBullet()
-  let l:l=getline('.')
+function! ZimNextBullet(l)
+  let l:l=a:l
   let l:pos=match(l:l,'\h')
   if l:pos > -1
     let l:l=strpart(l:l,0,l:pos)
@@ -239,19 +309,67 @@ function! ZimNextBullet()
   return l:ret
 endfu
 
-" Insert bullet if we are at the end of the string, else split line
-function! ZimCR()
+function! s:getLinkPath(tgt)
+  let l:tgt=''
+  if len(a:tgt)
+    let l:tgt=substitute(
+          \ substitute(a:tgt,':','/','g'),
+          \ ' ','_','g').'.txt'
+    let l:notebook=expand('%:p:s?'.g:zim_notebooks_dir.'[/]*??:s?/.*$??')
+    let l:tgt=g:zim_notebooks_dir.'/'.l:notebook.'/'.l:tgt
+  endif
+  return l:tgt
+endfunction
+
+function! s:getLinkUnderCursor()
   let l:pos=col('.')
-  let l:eol=col('$')
-  if l:pos >= (l:eol-1)
-    put=ZimNextBullet()
+  let l:l=getline('.')
+  let l:matches=[]
+  let l:tgt=''
+  let l:prev=0
+  let l:b=match(l:l, '\[\[.*\]\]',l:prev)
+  let l:e=(l:b > -1) ? match(l:l, '\(\]\]\||\)', l:b) : -1
+  while l:e > -1
+    if l:pos >= l:b && l:pos <= l:e
+      let l:tgt=strpart(l:l, l:b+2, l:e-l:b-2)
+      break
+    endif
+    let l:b=match(l:l, '\[\[.*\]\]',l:prev)
+    let l:e=(l:b > -1) ? match(l:l, '\(\]\]\||\)', l:b) : -1
+  endwhile
+  return s:getLinkPath(l:tgt)
+endfunction
+
+function! ZimJumpToLinkUnderCursor()
+  let l:path=s:getLinkUnderCursor()
+  let l:self=expand('%:p')
+  if len(l:path) || len(a:edit_cmd)
+     if bufexists(l:path)
+       exe 'buffer '.l:path
+     else
+       exe 'e '.l:path
+     endif
+  endif
+  let b:zim_last_backlink=l:self
+endfunction
+
+" Insert bullet if we are at the end of the string, else split line
+" the cr substitute char is needed in order to mark the line return
+" before calling this function
+function! ZimCR(cr)
+  let l:pos=col('.')
+  let l:l=getline('.')
+  if a:cr
+    let pos=match(l:l,a:cr,l:pos-2)
+  endif
+  let l:b=strpart(l:l, 0, l:pos-1)
+  let l:e=substitute(strpart(l:l, l:pos),'\s*$','','')
+  call setline('.',l:b)
+  if len(l:e)
+    put=l:e
+  else
+    put=ZimNextBullet(l:b).' '
     normal $
-  else 
-    " equivalent to norm <C-j>
-    let l:l=getline('.')
-    let l:end=strpart(l:l, l:pos)
-    call setline('.',strpart(l:l,0,l:pos))
-    put=l:end
   endif
 endfu
 
@@ -332,3 +450,78 @@ function! ZimToggleStyleBlock(style)
     endfor
   endif
 endfu
+
+""" The next functions are for notebook navigation
+let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
+
+" Easily change g:zim_notebook
+function! ZimSelectNotebook()
+  new | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
+  call setline(1, [ g:zim_notebooks_dir ]+
+        \ filter(
+        \ split(globpath(g:zim_notebooks_dir,'*'),"\n"),
+        \ 'isdirectory(v:val)')
+        \)
+  nnoremap <buffer> <cr> :exe "let g:zim_notebook='".getline('.')."'"<cr>:q<cr>
+  nnoremap <buffer> q :q<cr>
+endfunction
+
+""
+" List notes on the directory, with a filter 
+"
+function! s:ZimListNotes(dir,filter)
+  let l:ret=[]
+  for l:i in split(globpath(a:dir,'*'),"\n")
+      if isdirectory(l:i)
+        call extend(l:ret ,s:ZimListNotes(l:i,a:filter))
+      else
+        let l:i=substitute(l:i,g:zim_notebook.'/*','','')
+        if l:i =~ a:filter
+          call add(l:ret, substitute(l:i, '/', ' : ', 'g'))
+        endif
+      endif
+  endfor
+  return l:ret
+endfunction
+
+function! ZimListNotes(dir,...)
+  let l:filter=""
+  if len(a:000) && len(a:1)
+    let l:filter=a:1
+  endif
+  tabnew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
+
+  "" Openning the file in a vertical new slit (vnew) on Return:
+  "  nnoremap <buffer> <cr> :vnew ~/Notebooks/Notes/note.txt)<cr>
+  " + note.txt path shall be computed on Return key
+  "  nnoremap <buffer> <cr> :exe 'vnew '.a:dir.'/'.substitute(getline('.'),' : ','/','g')<cr>
+  " + a:dir shall be computed now
+  exe "nnoremap <buffer> <cr> :exe 'vnew ".a:dir."/'.substitute(getline('.'),' : ','/','g')<cr>"
+  nnoremap <buffer> q :q<cr>
+  call setline(1,
+        \ ['<cr> -> '.s:gettext('Open note'),
+        \  '  q -> '.s:gettext('Close this window'),
+        \  '-------------------------------------'] +
+        \ s:ZimListNotes(a:dir, l:filter)
+        \ )
+  4
+endfunction
+
+function! ZimSearchInNotebook(arg)
+  if has("win32")
+    "assuming findstr
+    let l:grep_opt='/s'
+  else
+    "assuming grep
+    let l:grep_opt='-r'
+  endif
+  exe 'silent lgrep! '.l:grep_opt.' '.a:arg.' '.g:zim_notebook
+  tabnew | ll | lopen
+  nnoremap <buffer> q :lclose<cr>
+  nnoremap <buffer> n :lnext<cr>
+  nnoremap <buffer> N :lprevious<cr>
+endfunction
+
+command! -nargs=* ZimGrep :call ZimSearchInNotebook(<q-args>)
+command! -nargs=* ZimList :call ZimListNotes(g:zim_notebook,<q-args>)
+command! ZimSelectNotebook :call ZimSelectNotebook()
