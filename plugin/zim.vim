@@ -2,7 +2,7 @@
 " Author: Jack Mudge <jakykong@theanythingbox.com>
 " * I declare this file to be in the public domain.
 "
-" Last Change:	2017 May 25
+" Last Change:	2017 June 7
 " Maintainer: Luffah <luffah@runbox.com>
 " Version: 0.2
 "
@@ -17,6 +17,9 @@
 "   * Add a gettext like function
 "   * In insert mode : add bullet, numbering, or checkbox
 "     on <CR> with the result of ZimNextBullet
+" 2017-06-07 - luffah - v0.3
+"   * Add note creation command
+"   * Add workarounds to force Zim re-indexing
 "
 " What This Plugin Does: 
 " * Provides shortcuts and helpful mappings to work with Zim wiki formatting.

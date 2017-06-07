@@ -1,0 +1,13 @@
+:ZimCD	zim.txt	/*:ZimCD*
+:ZimGrep	zim.txt	/*:ZimGrep*
+:ZimList	zim.txt	/*:ZimList*
+:ZimNewNote	zim.txt	/*:ZimNewNote*
+:ZimSelectNotebook	zim.txt	/*:ZimSelectNotebook*
+Zim	zim.txt	/*zim-intro*
+ZimEditingShorcuts	zim.txt	/*zim-editing*
+ZimUpdateIndex	zim.txt	/*zim-variables*
+zim-commands	zim.txt	/*zim-commands*
+zim-editing	zim.txt	/*zim-editing*
+zim-intro	zim.txt	/*zim-intro*
+zim-toc	zim.txt	/*zim-toc*
+zim-variables	zim.txt	/*zim-variables*
