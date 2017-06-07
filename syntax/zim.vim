@@ -58,5 +58,4 @@ syn match zimStrikethrough /\~\~.*\~\~/
 highlight link zimStrikethrough NonText
 
 
-
-
+let b:current_syntax = "zim"

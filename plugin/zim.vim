@@ -10,7 +10,7 @@
 " 2016-09-12 - Jack Mudge - v0.1
 "   * Initial creation.
 " 2017-05-25 - luffah - v0.2
-"   * Mod. CreateZimHeader 
+"   * Mod. CreateZimHeader  to zim#CreateHeader
 "      + minimal support of Linux strftime() + automatic title
 "   * Keymappings
 "      + limited to zim buffers + stored in g:zim_keymapping
@@ -18,14 +18,35 @@
 "   * In insert mode : add bullet, numbering, or checkbox
 "     on <CR> with the result of ZimNextBullet
 "
-" Provides shortcuts and helpful mappings to work with Zim wiki formatting.
-" This is primarily intended for using the 'Edit Source' functionality in
-" Zim, but may be useful to create new files in a Zim folder.
+" What This Plugin Does: 
+" * Provides shortcuts and helpful mappings to work with Zim wiki formatting.
+"   This is primarily intended for using the 'Edit Source' functionality in
+"   Zim, but may be useful to create new files in a Zim folder.
+" * Add bullet, incremental, numbering, checkboxes on <CR> in insert mode
+" * Note navigation and creation
 "
+" What This Plugin Does Not: 
+" * Doesn't add bullets, numbering, or checkboxes on <CR> in visual mode
+" * Doesn't reindex Zim (see Bugs) nor reorganize notes
+" /** IF YOU WANT TO UPDATE ZIM INDEX FROM VIM **
+"  On Linux you can choose to use the deprecated ZimBrutalUpdate command.
+"  To use this command you need to enable it
+"     in vimrc : let g:zim_brutal_update_allowed=1
+"  OR
+"  to setup shortcut key (F5) in $HOME/.config/zim/accelmap
+"  and define it in your configuration allowing
+"  the plugin to update index when a note is created (ZimNewNote command)
+"      in vimrc : let g:zim_update_index_key="F5"
+"   in accelmap : (gtk_accel_path "<Actions>/GtkInterface/reload_index" "F5")
+" **/
 " Known Bugs:
 " * Zim issue: New files aren't shown in Zim index until restart of zim.
-" * Doesn't correctly add bullets, numbering, or checkboxes on <CR> from
-"   visual mode
+"              This can be forced with the command `zim --index`, but indexing
+"              while zim is running will corrupt index. 
+"              If you encounter problems with index, stop zim, remove zim index
+"              from your cache. (Linux: rm -rf $HOME/.cache/zim)
+"              If you want to reindex living Zim Notebook, click on Zim menu :
+"              'Tools' > 'Update Index'
 "
 " Example configuration :
 " set rtp+=/path/to/zim.vim
@@ -50,6 +71,32 @@
 " " Or Go 2 lines after the last title
 " let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
 "
+
+"'"'""'"'"'"'"'"'"'"'"'"'"'"'"'"
+""
+"  Avaible commands
+"
+command! ZimSelectNotebook :call zim#SelectNotebook()
+command! -nargs=* ZimGrep :call zim#SearchTermInNotebook(<q-args>)
+command! -nargs=* -complete=customlist,zim#_CompleteNotes ZimNewNote :call zim#CreateNote(g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#_CompleteNotes ZimList :call zim#ListNotes(g:zim_notebook,<q-args>)
+command! -nargs=1 -complete=customlist,zim#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
+
+if !has("win32")
+  if get(g:,'zim_brutal_update_allowed', 0)
+    command! ZimBrutalUpdate :silent !pkill -9 zim; zim & 
+  elseif exists(':ZimBrutalUpdate') 
+    delcommand ZimBrutalUpdate
+  endif
+endif
+
+""""""""""""""""""""""""""""""""
+" Plugin init
+" (developpers can redefined functions with ':let g:zim_dev=1 | source %')
+if (!get(g:,'zim_dev',0) && get(g:,'loaded_zim',0))
+        \ || &compatible
+    finish
+endif
 
 "'"'""'"'"'"'"'"'"'"'"'"'"'"'"'"
 ""
@@ -147,14 +194,19 @@ let g:zim_open_jump_to=get(g:,'zim_open_jump_to',
 let g:zim_wiki_lang=get(g:,'zim_wiki_lang','fr')
 let s:zim_wiki_prompt={
       \ 'en' : { 'note_name' : 'Name of the new note',
-      \          'title_level': "Title level (between 1 and 5 , else remove style)"
+      \          'title_level': "Title level (between 1 and 5 , else remove style)",
+      \          'note_out_of_notebook': "Notes shall be created in a notebook... Aborting",
       \        },
       \ 'fr' : { 'note_name' : 'Nom de la nouvelle note',
       \          'title_level': "Niveau de titre (de 1 à 5 , sinon retire le style)",
+      \          '%s created': "La note %s a été créée",
+      \          'note_out_of_notebook': "Impossible de créer une note en dehors d'un bloc-note !",
+      \          'Note %s already exists' : "La note '%s' existe déja",
+      \          'Notebook %s not exists' : "Le bloc-note '%s' n'existe pas. Il faut d'abord le créer dans Zim...",
       \          'Zim Header already exists' : "Le fichier présente déja une entète Zim",
       \          'Close this window' : 'Quitter',
       \          'Preview' : 'Visualiser sans bouger',
-      \          'Open note' : 'Ouvrir cette note'
+      \          'Open note' : 'Ouvrir cette note',
       \        }
       \}
 
@@ -253,6 +305,54 @@ function! zim#CreateHeader()
           \ "====== ".l:note_name." ======"
           \]
     call append(0,l:header)
+endfunction
+
+"" Create Zim Note in a buffer, i.e., for a new file
+" @param string dir  Notebook dir
+" @param string name Path to the note
+function! zim#CreateNote(dir,name)
+  let l:note=a:dir.'/'.substitute(a:name,'\(\.txt\)\?$','.txt','g')
+  if l:note !~ g:zim_notebooks_dir.'/.*/.*.txt'
+    echo s:gettext('note_out_of_notebook')
+  else
+    let l:dirs=split(substitute(
+          \substitute(l:note,'/[^/]*$','',''),g:zim_notebooks_dir,'',''),'/')
+    if isdirectory(g:zim_notebooks_dir.'/'.l:dirs[0])
+      if !filereadable(l:note)
+        " path begin with Notebook name
+        let l:notebook=l:dirs[0]
+        call remove(l:dirs,0)
+        let l:path=l:notebook
+        for l:i in l:dirs
+          let l:path.='/'.l:i
+          if !isdirectory(a:dir.'/'.l:path)
+            call mkdir(a:dir.'/'.l:path,'p', 0700)
+          endif
+          if !filereadable(a:dir.'/'.l:path.'.txt')
+            call zim#CreateNote(a:dir,l:path)
+          endif
+        endfor
+        exe 'vnew '.l:note
+        call zim#CreateHeader()
+        exe 'silent w'
+        if !has("win32")
+          exe 'silent !chmod 600 '.l:note
+        endif
+        exe 'silent e!'
+        echo printf(s:gettext('%s created'),l:note)
+        if exists('g:zim_update_index_key')
+          if len(exepath('xdotool'))
+            exe "silent !xdotool search --name '".l:notebook." - Zim' key ".g:zim_update_index_key
+          endif
+        endif
+      else
+        echo printf(s:gettext('Note %s already exists'),l:dirs[0])
+        exe 'vnew '.l:note
+      endif
+    else
+      echo printf(s:gettext('Notebook %s not exists'),l:dirs[0])
+    endif
+  endif
 endfunction
 
 "" Make a title with the current line
@@ -527,7 +627,7 @@ function! zim#ListNotes(dir,...)
         \  '------- -> -------------------------------'] +
         \ s:ZimListNotes(a:dir, l:filter)
         \ )
-  4
+  5
 endfunction
 
 "" Do a reccursive grep on Notebook
@@ -564,8 +664,4 @@ function! zim#_CompleteBook(A,L,P)
         \)
 endfu
 
-
-command! ZimSelectNotebook :call zim#SelectNotebook()
-command! -nargs=* ZimGrep :call zim#SearchTermInNotebook(<q-args>)
-command! -nargs=* -complete=customlist,zim#_CompleteFunction ZimList :call zim#ListNotes(g:zim_notebook,<q-args>)
-command! -nargs=1 -complete=customlist,zim#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
+let g:loaded_zim=1
