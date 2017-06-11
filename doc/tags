@@ -6,8 +6,15 @@
 Zim	zim.txt	/*zim-intro*
 ZimEditingShorcuts	zim.txt	/*zim-editing*
 ZimUpdateIndex	zim.txt	/*zim-variables*
+g:zim_brutal_update_allowed	zim.txt	/*g:zim_brutal_update_allowed*
+g:zim_dev	zim.txt	/*g:zim_dev*
+g:zim_keymapping	zim.txt	/*g:zim_keymapping*
+g:zim_notebook	zim.txt	/*g:zim_notebook*
+g:zim_notebooks_dir	zim.txt	/*g:zim_notebooks_dir*
+g:zim_open_jump_to	zim.txt	/*g:zim_open_jump_to*
+g:zim_update_index_key	zim.txt	/*g:zim_update_index_key*
 zim-commands	zim.txt	/*zim-commands*
 zim-editing	zim.txt	/*zim-editing*
 zim-intro	zim.txt	/*zim-intro*
-zim-toc	zim.txt	/*zim-toc*
+zim-toc	zim.txt	/*Zim*
 zim-variables	zim.txt	/*zim-variables*

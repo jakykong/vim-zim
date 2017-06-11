@@ -43,11 +43,11 @@ highlight zimBullet gui=bold guifg=black guibg=#cccccc term=bold ctermfg=0
 
 " Style : bold
 syn match zimBold /\*\*.*\*\*/
-highlight zimBold gui=bold term=bold
+highlight zimBold gui=bold term=standout cterm=bold
 
 " Style : italic
 syn match zimItalic +//.*//+
-highlight zimItalic gui=italic
+highlight zimItalic gui=italic cterm=italic
 
 " Style : hightlighted
 syn match zimHighlighted /__.*__/

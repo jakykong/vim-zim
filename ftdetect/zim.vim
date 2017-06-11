@@ -1,5 +1,3 @@
-let g:zim_notebooks_dir=get(g:,'zim_notebooks_dir',expand("~/Notebooks"))
-
 function! Ftdetect_zim()
   " No change if we didn't start with a txt file
   if &ft != 'text'
