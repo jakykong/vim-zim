@@ -77,16 +77,16 @@ Known issues
 Changelog:
 ==========
 2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
-* Initial commit and upload to Github. 
+     * Initial commit and upload to Github. 
 2017-06-13 - Luffah <luffah@runbox.com>
-* v1 : Provide customisation, helpfile, and navigation features
-* (change) Header accept user dialog instead of count
-* (change) Syntax color reviewed in order to look more like Zim
-* Mod. CreateZimHeader + minimal support of Linux strftime() + automatic title
-* Customazible keymappings limited to zim buffers stored in g:zim_keymapping
-* Filetype detection based on a path
-* In insert mode : add bullet, numbering, or checkbox on <Leader><CR> with the result of ZimNextBullet
-* Multilingual : English, French // translations can be added in file plugin/zim.vim
-* You can now Search and jump to another note
+     * v1 : Provide customisation, helpfile, and navigation features
+     * (change) Header accept user dialog instead of count
+     * (change) Syntax color reviewed in order to look more like Zim
+     * Mod. CreateZimHeader + minimal support of Linux strftime() + automatic title
+     * Customazible keymappings limited to zim buffers stored in g:zim_keymapping
+     * Filetype detection based on a path
+     * In insert mode : add bullet, numbering, or checkbox on <Leader><CR> with the result of ZimNextBullet
+     * Multilingual : English, French // translations can be added in file plugin/zim.vim
+     * You can now Search and jump to another note
 
 
