@@ -35,7 +35,7 @@ About zim-vim
 =============
 This section give some details about the development of this plugin.
 
-##Known issues  
+## Known issues  
 * Windows :Zim header command uses strftime, but due to working around Microsoft issues,
   it presently only supports Pacific Time Zone .
 * Not an issue with the plugin, but with Zim: There is no way to refresh the index
@@ -46,7 +46,7 @@ This section give some details about the development of this plugin.
   There is no guaranty for navigating and note creation functionnalities to work on Vim Windows.
 * On terminal version of Vim : the notebook explorer is not perfectly redrawed.
 
-##Changelog
+## Changelog
 #### 2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
 * Initial commit and upload to Github. 
 
@@ -62,7 +62,7 @@ This section give some details about the development of this plugin.
 * You can now Search and jump to another note
 
 
-##Versions details
+## Versions details
 #### Version 0
 ```
 Author: Jack Mudge <jakykong@theanythingbox.com>
