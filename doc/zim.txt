@@ -117,54 +117,17 @@ COMMANDS                                                        *zim-commands*
 
                     Set |g:zim_notebook| = <notebook_name>
 
-:ZimList <note_name_pattern>                                         *:ZimList*
+:ZimList <note_name_pattern>                                       *:ZimList*
                     Arguments are completed in wild menu.
 
                     Open a temporary window to choose notes to open.
-                    Following keys are avaible in this window :
+                    Some keys are avaible in this window :
+                    <cr>    -> Open note in current window
+                    <space> -> Open note in an aside window (preview)
+                     q     -> Quit
 
-                    <cr>      -> Open note in current window
 
-                    <space>   -> Open note in an aside window (preview)
-
-                     u        -> Update the list
-
-                     f        -> Modify filter <note_name_pattern>
-
-                     d        -> Detect doubles names.
-                                 Toggle an indicator '|' to show notes that
-                                 have the same name.
-
-                                 Once it's toggled, you can jump to doubles by
-                                 pressing 'n' (Next).
-
-                     D        -> Delete permanetly the note file
-                                 (does not trash; not recursive)
-
-                     N        -> Create a new note in the path under cursor.
-                                 A prompt will appear.
-                                 The new note can be a subpath.
-                                 (note creation move to another
-                                 window; list is not updated)
-
-                     m        -> Move the note (under cursor)
-                                 This act in 3 steps :
-                                 1. select the current note by pressing 'm'
-                                 2. when you see '| MOVING' aside the note,
-                                    move cursor to another note
-                                 3. press 'm' again in order to
-                                    move the note in the same path than
-
-                     R        -> Rename the note (under cursor)
-                                 A prompt will appear...
-
-                     q        -> Quit
-
-                     Note: Display appear to be broken when using 'm' operation
-                           in terminal (text-mode) version of vim. Switch tab
-                           if you need to redraw.
-
-:ZimNewNote <note_path_in_notebook>                               *:ZimNewNote*
+:ZimNewNote <note_path_in_notebook>                                  *:ZimCD*
                     Arguments are completed in wild menu.
 
                     Recursively create the note specified in
@@ -175,20 +138,7 @@ COMMANDS                                                        *zim-commands*
                     If |g:zim_update_index_key| is set and `xdotool` is found,
                     then it tries to locate Zim window and to send the key.
 
-:ZimCopy  <note_path_in_notebook> <note_path_in_notebook>            *:ZimCopy*
-:ZimMove  <note_path_in_notebook> <note_path_in_notebook>            *:ZimMove*
-                    Arguments are completed in wild menu.
-
-                    Copy or Move the note to another note path.
-
-                    If needed : Recursively create the note specified in
-                    <note_path_in_notebook>.
-
-                    [ Linux only ]
-                    If |g:zim_update_index_key| is set and `xdotool` is found,
-                    then it tries to locate Zim window and to send the key.
-
-:ZimGrep <pattern>                                                   *:ZimGrep*
+:ZimGrep <pattern>                                                  *:ZimList*
                     Open a location list for
                     the matches of <pattern> in g:zim_notebook.
 
