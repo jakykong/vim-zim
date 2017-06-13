@@ -1,6 +1,8 @@
 :ZimCD	zim.txt	/*:ZimCD*
+:ZimCopy	zim.txt	/*:ZimCopy*
 :ZimGrep	zim.txt	/*:ZimGrep*
 :ZimList	zim.txt	/*:ZimList*
+:ZimMove	zim.txt	/*:ZimMove*
 :ZimNewNote	zim.txt	/*:ZimNewNote*
 :ZimSelectNotebook	zim.txt	/*:ZimSelectNotebook*
 Zim	zim.txt	/*zim-intro*
