@@ -226,8 +226,15 @@ let g:zim_wiki_prompt={
       \          'Open note' : 'Ouvrir la note sous le curseur',
       \          'Update view' : 'Rafraichir',
       \          'Modify filter' : 'Modifier le filtre',
-      \          'Detect doubles' : 'Détecter les doublons',
+      \          'Detect doubles names' : 'Détecter les notes qui porte le même nom',
       \          'Disable doubles detection (%d founds)' : 'Ne plus détecter les doublons (%d restant)',
+      \          'Cannot move a note into itself !': 'Impossible de déplacer une note dans elle-même !',
+      \          'Find Next double': 'Atteindre le doublon suivant',
+      \          'Delete note': 'Supprimer la note (irreversible)',
+      \          'Create note': 'Créer un nouvelle note à coté de la note sous le curseur',
+      \          'Rename note under cursor': 'Renommer la note sous le curseur',
+      \          'Move note under cursor': 'Sélectionner la note pour déplacement',
+      \          'Place the note under cursor (moving %s)': 'Déplacer la note (%s) sélectionnée à coté de la note sous le curseur',
       \        }
       \}
 
