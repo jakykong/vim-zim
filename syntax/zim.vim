@@ -5,32 +5,57 @@
 " Changelog:
 " 2016-09-12 - Jack Mudge - v0.1
 "   * Initial creation
+" 2017-05-30 - Luffah - v0.3
+"   * More detailled syntax
 "
 " Simple syntax file, assumes all mime-type lines are part of the header
 " (TODO: Improve this to make sure they're at the beginning of the file only)
+if version < 600
+  syntax clear
+elseif exists("b:current_syntax")
+  finish
+endif
 
 syn case ignore
 
-syn match zmFHdr /^\(Content-Type\|Wiki-Format\|Creation-Date\):.*$/
-highlight zmFHdr gui=italic
+" Zim Header
+syn match zimHeader /^\(Content-Type\|Wiki-Format\|Creation-Date\):\(.*\)\@=/ contained
+syn region zimHeaderRegion start="^\(Content-Type\|Wiki-Format\|Creation-Date\):\%1l" end="^\([^CWM].*\|\)$" contains=zimHeader keepend
+highlight link zimHeader LineNr
 
-syn match zmWHdr /^\(=\+\).*\1$/
-highlight zmWHdr gui=bold
+" Titles (h1 to h5)
+syn match Title /^\(=\+\).*\1$/
 
-syn match zmWBld /\*\*.*\*\*/
-highlight zmWBld gui=bold
+" Links
+syn match Identifier /\[\[.*\]\]/
 
-syn match zmWItl +//.*//+
-highlight zmWItl gui=italic
+" Checkbox
+syn match zimCheckbox /^\(\s\{4}\)*\[[ ]\]\(\s\|$\)/
+syn match zimYes /^\(\s\{4}\)*\[[\*]\]\(\s\|$\)/
+syn match zimNo  /^\(\s\{4}\)*\[[x ]\]\(\s\|$\)/
+highlight zimCheckbox gui=bold guifg=black guibg=#cccccc term=bold ctermfg=0
+highlight zimYes gui=bold guifg=darkgreen guibg=#cccccc term=bold ctermfg=2
+highlight zimNo  gui=bold guifg=darkred guibg=#cccccc term=bold ctermfg=8
 
-syn match zmBullet /^\s*\(\[[* ]\]\|\*\)\(\s\|$\)/
-highlight zmBullet gui=bold
+" Bullet
+syn match ZimBullet /^\(\s\{4}\)*\*\(\s\|$\)/
+highlight zimBullet gui=bold guifg=black guibg=#cccccc term=bold ctermfg=0
 
-syn match zmWHlt /__.*__/
-highlight zmWHlt gui=inverse
+" Style : bold
+syn match zimBold /\*\*.*\*\*/
+highlight zimBold gui=bold term=standout cterm=bold
 
-syn match zmWStr /\~\~.*\~\~/
-highlight zmWStr gui=underline
+" Style : italic
+syn match zimItalic +//.*//+
+highlight zimItalic gui=italic cterm=italic
+
+" Style : hightlighted
+syn match zimHighlighted /__.*__/
+highlight link zimHighlighted DiffChange 
+
+" Style : strikethrough
+syn match zimStrikethrough /\~\~.*\~\~/
+highlight link zimStrikethrough NonText
 
 
-
+let b:current_syntax = "zim"

@@ -1,0 +1,238 @@
+*zim.txt*   *Zim* Note wrapper for Vim 
+
+                                                          *Zim* *zim.vim*
+            ___    /   /                                             ~
+           |_ _|  /  /         _________      _                       ~
+    ___      |_  / /          |_______  |    | |                      ~
+   |_ _|  .-'   //                  ,' ,'     _     _  ____   ____    ~
+       \ '     /  '    ___        ,' ,'      | |     \/ __ \ / __ \   ~
+        |          | -|_ _|     ,' ,'        | |    | |   | |    | |  ~
+        '.        .'          ,' ,'_____     | |    | |   | |    | |  ~
+     ___/ '- __ -'          __|_________|__ _|_|_ __|_|   |_|    |_|__~
+    |_ _|     _|_                                                     ~
+             |_ _|      Zim -  A Desktop Wiki  (for Vim 7.0 or newer)  ~
+
+                                                                *zim-toc*
+
+      DESCRIPTION  = = = = = = = = = = = = = = = = = =  |zim-intro|
+      VARIABLES  = = = = = = = = = = = = = = = = = = =  |zim-variables|
+      COMMANDS = = = = = = = = = = = = = = = = = = = =  |zim-commands|
+      EDITOR ACTIONS AND KEYBINDINGS = = = = = = = = =  |zim-editing|
+
+==============================================================================
+DESCRIPTION                                                        *zim-intro*
+                                                                   |zim-toc|
+This Zim plugin provides additions to Vim for use with Zim wiki files.
+ * Syntax highlighting and filetype detection for Zim files
+ * Commands for navigating through Notes 
+ * Commands/keymapping to bold, italicize, strike, or mark text.
+
+The typical workflow is:
+ * Create files in Zim, and use Tools->Edit Source to access Vim.
+ * Create files in Vim, and (re)start Zim to read them.
+
+Authors:
+  Jack Mudge       Original code
+  Luffah           Bug correction, Navigation functionnalities, Help file
+ 
+  See code for more details.
+
+Licenses:
+  Public Domain
+  CC 0 for the documentation
+  GPL 
+  Same kind as vim -- we care to free softwares but we need to free peoples  
+ 
+==============================================================================
+VARIABLES                                                       *zim-variables*
+                                                                |zim-toc|
+
+*g:zim_notebook*
+                   Default : $HOME/Notesbooks
+                   You can modify easily with |:ZimCD| an |:ZimSelectNotebook|
+
+
+*g:zim_notebooks_dir*
+                   Default : $HOME/Notesbooks
+
+
+*g:zim_update_index_key*
+                   [Linux only; require XdoTools installed]
+                   Set the key to auto-update of a living Zim instance.
+                   =Configuration example=
+                   In vimrc :
+                    let g:zim_update_index_key="F5"
+
+                   In $HOME/.config/zim/accelmap :
+                    (gtk_accel_path "<Actions>/GtkInterface/reload_index" "F5")
+
+
+*g:zim_keymapping*
+                   Set the keys associated to actions
+                   defined in *g:zim_edit_actions* (../plugin/zim.vim). 
+                   Default : {
+                       \ '<cr>'               :  '<CR>',
+                       \ 'continue_list'      :  '<Leader><CR>',
+                       \ 'jump'               :  '<Leader>g',
+                       \ 'jump_back'          :  '<Leader>G',
+                       \ 'bold'               :  '<Leader>wb',
+                       \ 'italic'             :  '<Leader>wi',
+                       \ 'highlight'          :  '<Leader>wh',
+                       \ 'strike'             :  '<Leader>ws',
+                       \ 'title'              :  '<Leader>wt',
+                       \ 'header'             :  '<Leader>wH',
+                       \ 'all_checkbox_to_li' :'<F8>',
+                       \ 'li'                 :'<Leader>wl',
+                       \ 'checkbox'           :'<Leader>wc',
+                       \ 'checkbox_yes'       :'<F12>',
+                       \ 'checkbox_no'        :'<S-F12>'
+                       \ }
+
+
+*g:zim_brutal_update_allowed*
+                   On sourcing, set to 1 to declare the command ZimBrutalUpdate,
+                   which kill Zim and relaunch it.
+
+
+*g:zim_open_jump_to*
+                   Set where the cursor is positionned in the file on openning
+                   Examples :
+                   " On note openning, go 2 lines after the first title
+                   let g:zim_open_jump_to=["==.*==", 2]
+                   " Or Go 2 lines after the last title
+                   let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
+
+
+*g:zim_dev*
+                    For developers.
+                    Set to 1 to reload function on plugin/zim.vim sourcing.
+
+
+==============================================================================
+COMMANDS                                                        *zim-commands*
+                                                                |zim-toc|
+
+:ZimCD <notebook_name>                                               *:ZimCD*
+                    Arguments are completed in wild menu.
+
+                    Set |g:zim_notebook| = <notebook_name>
+
+:ZimList <note_name_pattern>                                         *:ZimList*
+                    Arguments are completed in wild menu.
+
+                    Open a temporary window to choose notes to open.
+                    Following keys are avaible in this window :
+
+                    <cr>      -> Open note in current window
+
+                    <space>   -> Open note in an aside window (preview)
+
+                     u        -> Update the list
+
+                     f        -> Modify filter <note_name_pattern>
+
+                     d        -> Detect doubles names.
+                                 Toggle an indicator '|' to show notes that
+                                 have the same name.
+
+                                 Once it's toggled, you can jump to doubles by
+                                 pressing 'n' (Next).
+
+                     D        -> Delete permanetly the note file
+                                 (does not trash; not recursive)
+
+                     N        -> Create a new note in the path under cursor.
+                                 A prompt will appear.
+                                 The new note can be a subpath.
+                                 (note creation move to another
+                                 window; list is not updated)
+
+                     m        -> Move the note (under cursor)
+                                 This act in 3 steps :
+                                 1. select the current note by pressing 'm'
+                                 2. when you see '| MOVING' aside the note,
+                                    move cursor to another note
+                                 3. press 'm' again in order to
+                                    move the note in the same path than
+
+                     R        -> Rename the note (under cursor)
+                                 A prompt will appear...
+
+                     q        -> Quit
+
+                     Note: Display appear to be broken when using 'm' operation
+                           in terminal (text-mode) version of vim. Switch tab
+                           if you need to redraw.
+
+:ZimNewNote <note_path_in_notebook>                               *:ZimNewNote*
+                    Arguments are completed in wild menu.
+
+                    Recursively create the note specified in
+                    <note_path_in_notebook>. If any parent note is missing,
+                    then it is automatically created.
+                    
+                    [ Linux only ]
+                    If |g:zim_update_index_key| is set and `xdotool` is found,
+                    then it tries to locate Zim window and to send the key.
+
+:ZimCopy  <note_path_in_notebook> <note_path_in_notebook>            *:ZimCopy*
+:ZimMove  <note_path_in_notebook> <note_path_in_notebook>            *:ZimMove*
+                    Arguments are completed in wild menu.
+
+                    Copy or Move the note to another note path.
+
+                    If needed : Recursively create the note specified in
+                    <note_path_in_notebook>.
+
+                    [ Linux only ]
+                    If |g:zim_update_index_key| is set and `xdotool` is found,
+                    then it tries to locate Zim window and to send the key.
+
+:ZimGrep <pattern>                                                   *:ZimGrep*
+                    Open a location list for
+                    the matches of <pattern> in g:zim_notebook.
+
+:ZimSelectNotebook                                         *:ZimSelectNotebook*
+                    Open a temporary window to choose the current notebook. 
+                    
+                    Set |g:zim_notebook|
+
+
+==============================================================================
+EDITOR ACTIONS AND KEYBINDINGS                                   *zim-editing*
+                                                                 |zim-toc|
+
+In a zim buffer, you can use keybindings defined in |g:zim_keymapping|
+to call special actions defined in |g:zim_edit_actions|.
+If you wish to modify keys just re-defined |g:zim_keymapping|.
+If you wish to modify the mode in which the keys are used , then you need to
+redefine |g:zim_edit_actions|. (see the code ../plugins/zim.vim to have a basis).
+
+Here is a summary of the default settings.
+ ------------------- ----- -------------- --------------------------------
+|Actions            | Mode| Default Key  | Description                    |
++-------------------+-----+--------------+---------------------------------
+==Facilities==
+|<cr>               | i   | <CR>         |_ <Enter> tries to continue a list 
+|continue_list      | n   | <Leader><CR> |_ Continue a list (point, numbered,
+|                   |     |              |  or checkbox)
+|all_checkbox_to_li | n   | <F8>         |_ Facility to remove every checkbox
+|header             | n   | <Leader>wH   |_ Add a Zim Header and set the first
+|                   |     |              |   title
+==Navigation==
+|jump               | n   | <Leader>g    |_ Jump to another note
+|jump_back          | n   | <Leader>G    |_ Jump back
+|
+==  Style   ==
+|bold               | n,v | <Leader>wb   |_ Bold style for selection or line
+|italic             | n,v | <Leader>wi   |_ Italic style for selection or line
+|highlight          | n,v | <Leader>wh   |_ Highlight selection or line
+|strike             | n,v | <Leader>ws   |_ Strike  selection or line
+|title              | n   | <Leader>wt   |_ Title style ( 1 to 5 )
+|li                 | n   | <Leader>wl   |_ Make the line a list item
+|checkbox           | n   | <Leader>wc   |_ Make the line a checkable item
+|checkbox_yes       | n   | <F12>        |_ Make the line a valid checkbox 
+|checkbox_no        | n   | <S-F12>      |_ Make the line an invalid checkbox 
+|
+==============================================================================
+vim:tw=78:fo=tcq2:isk=!-~,^*,^\|,^\":ts=8:ft=help:norl:
