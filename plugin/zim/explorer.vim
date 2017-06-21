@@ -4,8 +4,11 @@
 ""
 
 " Easily change g:zim_notebook
-function! zim#explorer#SelectNotebook()
-  new | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
+function! zim#explorer#SelectNotebook(whereopen)
+  if len(a:whereopen)
+    exe a:whereopen
+  endif
+  enew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
   call setline(1, [ g:zim_notebooks_dir ]+
         \ filter(
         \ split(globpath(g:zim_notebooks_dir,'*'),"\n"),
@@ -63,30 +66,33 @@ function! zim#explorer#interactiveRename()
   silent call zim#explorer#ListUpdate()
 endfunction
 
-function! zim#explorer#interactiveNewNote()
+function! zim#explorer#interactiveNewNote(whereopen)
   call zim#explorer#getLine()
   if len(b:current_id)
       let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
       let l:note_name=input( zim#util#gettext('note_name').' ? ')
-      call zim#note#Create(g:zim_notebook,l:tgt.'/'.l:note_name) 
+      call zim#note#Create(a:whereopen,g:zim_notebook,l:tgt.'/'.l:note_name) 
   endif
 endfunction
 
-function! zim#explorer#List(dir,...)
+function! zim#explorer#List(whereopen,dir,...)
   let l:filter=""
   if len(a:000) && len(a:1)
     let l:filter=a:1
   endif
-  tabnew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline 
+  if len(a:whereopen)
+    exe a:whereopen
+  endif
+  enew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline 
   let b:dir=a:dir | let b:filter=l:filter | let b:detect_doubles=0 
   let b:current_id='' | let b:moving_id=''
-  "" Openning the file in a vertical new slit (vnew) on Return:
-  nnoremap <buffer> <cr> :silent call zim#util#setWindow('','','','', zim#explorer#getLine())<cr>
-  nnoremap <buffer> <space> :silent call zim#util#setWindow('w','v','','W',zim#explorer#getLine())<cr>
-  nnoremap <buffer> u    :silent call zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
-  nnoremap <buffer> d    :silent call zim#explorer#getLine()<bar>let b:detect_doubles=!b:detect_doubles<bar>call zim#explorer#ListUpdate() <cr>
+  "" Openning the file in a vertical new split (vnew) on Return:
+  nnoremap <silent> <buffer> <cr> :call zim#util#open('','', 1, zim#explorer#getLine())<cr>
+  nnoremap <silent> <buffer> <space> :call zim#util#open((len(tabpagebuflist())>1?'wincmd w':'vertical rightbelow split'),'', 0,zim#explorer#getLine())<cr>
+  nnoremap <silent> <buffer> u  :call zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
+  nnoremap <silent> <buffer> d  :call zim#explorer#getLine()<bar>let b:detect_doubles=!b:detect_doubles<bar>call zim#explorer#ListUpdate() <cr>
   nnoremap <buffer> m    :call zim#explorer#interactiveMove()<cr>
-  nnoremap <buffer> N    :call zim#explorer#interactiveNewNote()<cr>
+  nnoremap <buffer> N    :call zim#explorer#interactiveNewNote('rightbelow vertical split')<cr>
   nnoremap <buffer> R    :call zim#explorer#interactiveRename()<cr>
   nnoremap <buffer> D    :exe '!rm -i '.zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
   exe "nnoremap <buffer> f    :silent call zim#explorer#getLine()<bar>let b:filter=input('".zim#util#gettext('Change filter :')."') <bar> call zim#explorer#ListUpdate()<cr>"

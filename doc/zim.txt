@@ -18,6 +18,8 @@
       VARIABLES  = = = = = = = = = = = = = = = = = = =  |zim-variables|
       COMMANDS = = = = = = = = = = = = = = = = = = = =  |zim-commands|
       EDITOR ACTIONS AND KEYBINDINGS = = = = = = = = =  |zim-editing|
+      API  = = = = = = = = = = = = = = = = = = = = = =  |zim-api|
+      TRICKY THINGS  = = = = = = = = = = = = = = = = =  |zim-tricky|
 
 ==============================================================================
 DESCRIPTION                                                        *zim-intro*
@@ -95,7 +97,37 @@ VARIABLES                                                       *zim-variables*
 
 
 *g:zim_open_jump_to*
-                   Set where the cursor is positionned in the file on openning
+                   Set where the cursor is positionned on file openning.
+                   This is done by a succession of movements.
+
+                   This is implemented by the function zim#util#line({array}),
+                   which return the line number found and move the cursor only
+                   if it needs to do scrolling.
+
+                   The array can contain 3 types of variables (mouvements),
+                   with different meanings :
+                     string   text pattern  e.g. My Awesome Title 
+
+                     integer  line delta  e.g. -1 to go back 1 line
+
+                     dict     {
+                        'init': '$' or '^' or any 'line' position
+
+                        'sens' : (-1 or 1) line step for searching text
+
+                        'get': a key for storing current line number
+
+                        'set': an existing key to reinit line position
+
+                        'scroll': a list of scroll commands
+                             Either
+                                  'top','center','bottom' to scroll until the
+                                  cursor is at the nammed position
+                             Or
+                                  an integer, indication how many line to
+                                  scroll
+                     }
+
                    Examples :
                    " On note openning, go 2 lines after the first title
                    let g:zim_open_jump_to=["==.*==", 2]
@@ -160,9 +192,13 @@ COMMANDS                                                        *zim-commands*
 
                      q        -> Quit
 
-                     Note: Display appear to be broken when using 'm' operation
-                           in terminal (text-mode) version of vim. Switch tab
-                           if you need to redraw.
+                    Note : Display appear to be broken when using 'm' operation
+                          in terminal (text-mode) version of vim. Switch tab
+                          if you need to redraw.
+
+                    Note : openning is defined in zim/explorer.vim and
+                          is performed using the function |zim#util#open()|
+
 
 :ZimNewNote <note_path_in_notebook>                               *:ZimNewNote*
                     Arguments are completed in wild menu.
@@ -222,6 +258,7 @@ Here is a summary of the default settings.
 ==Navigation==
 |jump               | n   | <Leader>g    |_ Jump to another note
 |jump_back          | n   | <Leader>G    |_ Jump back
+|explore            | n   | <F9>         |_ Open parent folder
 |
 ==  Style   ==
 |bold               | n,v | <Leader>wb   |_ Bold style for selection or line
@@ -234,5 +271,66 @@ Here is a summary of the default settings.
 |checkbox_yes       | n   | <F12>        |_ Make the line a valid checkbox 
 |checkbox_no        | n   | <S-F12>      |_ Make the line an invalid checkbox 
 |
+
+==============================================================================
+API                                                                   *zim-api*
+
+Functions you can use :
+
+zim#util#line({array})
+  A complex function to find a line number.
+  see |g:zim_open_jump_to| |zim#util#line()|
+
+zim#util#open({openning-window},{edit-opt},{focus},{file})
+   A function for file in a split or in current window.
+  {openning-window} contains commands to create split
+  {edit-opt}        contains the commands like 'noswapfile' 
+  {focus}           is a 0 or 1 value to say to focus on new buffer
+  {file}            is the file full path
+
+
+==============================================================================
+TRICKY THINGS                                                      *zim-tricky*
+
+Setup a TODOLIST                                                 *zim-todolist*
+----------------
+In your vimrc file, add >
+
+  function! s:todolist(whereopen)
+    call zim#util#open(
+          \ a:whereopen,
+          \ 'noswapfile',
+          \ 1,
+          \ g:zim_notebooks_dir.'/Notes/TODO.txt')
+
+    " find to first empty checkbox; find the title of the section it belong
+    " and make this title to be the second line of the window
+    exe zim#util#line([
+          \ '==.*==',
+          \ '\[ \].*',
+          \ {'get': 1, 'sens':-1},
+          \ '==.*==',
+          \ {'scroll': ['top',1], 'set':1}
+          \ ])
+
+    " put highlight on current line
+    hi CursorLine gui=bold guibg=white guifg=black 
+    setlocal cul
+
+  endfunction
+  command! Todo :silent call s:todolist('vertical leftabove split')
+
+  function! s:autostart()
+    if !exists('g:loaded_todo') && empty(bufname('%'))
+      call s:todolist('')
+      let g:loaded_todo=1
+    endif
+  endfunction
+
+  augroup _zim_autostart | autocmd!
+  autocmd VimEnter <buffer> silent call s:autostart()
+  augroup END
+
+
 ==============================================================================
 vim:tw=78:fo=tcq2:isk=!-~,^*,^\|,^\":ts=8:ft=help:norl:

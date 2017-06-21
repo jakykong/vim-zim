@@ -1,7 +1,7 @@
 "" Create Zim Note in a buffer, i.e., for a new file
 " @param string dir  Notebook dir
 " @param string name Path to the note
-function! zim#note#Create(dir,name)
+function! zim#note#Create(whereopen,dir,name)
   let l:note=a:dir.'/'.substitute(
         \substitute(a:name,'\([ :\*]\)\+','_','g'),
         \'\(\.txt\)\?$','.txt','g')
@@ -11,6 +11,9 @@ function! zim#note#Create(dir,name)
     let l:dirs=split(substitute(
           \substitute(l:note,'/[^/]*$','',''),g:zim_notebooks_dir,'',''),'/')
     if isdirectory(g:zim_notebooks_dir.'/'.l:dirs[0])
+      if len(a:whereopen)
+        exe a:whereopen
+      endif
       if !filereadable(l:note)
         " path begin with Notebook name
         let l:notebook=l:dirs[0]
@@ -22,10 +25,10 @@ function! zim#note#Create(dir,name)
             call mkdir(g:zim_notebooks_dir.'/'.l:path,'p', 0700)
           endif
           if !filereadable(g:zim_notebooks_dir.'/'.l:path.'.txt')
-            call zim#note#Create(g:zim_notebooks_dir,l:path)
+            call zim#note#Create(a:whereopen,g:zim_notebooks_dir,l:path)
           endif
         endfor
-        exe 'vnew '.l:note
+        exe 'enew '.l:note
         call zim#editor#CreateHeader()
         silent exe 'silent w'
         if has('win32')
@@ -42,7 +45,7 @@ function! zim#note#Create(dir,name)
         endif
       else
         echomsg printf(zim#util#gettext("Note '%s' already exists"),l:dirs[0])
-        exe 'vnew '.l:note
+        exe 'enew '.l:note
       endif
     else
       echomsg printf(zim#util#gettext("NoteBook '%s' not exists"),l:dirs[0])
@@ -181,24 +184,8 @@ function! s:setBufferSpecific()
   command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
   
   let l:i=line('.')
-  let l:step=1
   if l:i == 1
-    let l:e=line('$')
-    for l:j in g:zim_open_jump_to
-      if type(l:j) == type(0)
-        let l:i+=l:j
-      elseif type(l:j) == type({})
-        if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
-        if has_key(l:j, 'sens') | let l:step=(l:j['sens']==0?1:l:j['sens']) | endif
-      else
-        while l:i > 0 && l:i <= l:e && getline(l:i) !~ l:j
-          let l:i+=l:step
-        endwhile
-      endif
-      if l:i <= 0 | let l:i = 1 | break | endif
-      if l:i > l:e | let l:i = l:e | break | endif
-		  unlet l:j  " E706 without this
-    endfor
+    let l:i=zim#util#line(g:zim_open_jump_to)
   endif
   if l:i == 1 && g:zim_open_skip_header
     while getline(l:i) =~ 
@@ -208,4 +195,5 @@ function! s:setBufferSpecific()
   endif
   exe l:i
 endfu
+
 autocmd! Filetype zim call s:setBufferSpecific()

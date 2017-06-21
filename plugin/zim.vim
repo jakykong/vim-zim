@@ -83,11 +83,12 @@ if (!get(g:,'zim_dev',0) && get(g:,'loaded_zim',0)) || &cp | finish | endif
 ""
 "  Avaible commands
 "
-command! ZimSelectNotebook :call zim#explorer#SelectNotebook()
+command! ZimSelectNotebook :call zim#explorer#SelectNotebook('split')
 command! ZimCreateHeader :call zim#editor#CreateHeader()
 command! -nargs=* ZimGrep :call zim#explorer#SearchTermInNotebook(<q-args>)
-command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimNewNote :call zim#note#Create(g:zim_notebook,<q-args>)
-command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimList :call zim#explorer#List(g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimNewNote :call zim#note#Create('rightbelow vertical split',g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimOpen :call zim#util#open('rightbelow vertical split',g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimList :call zim#explorer#List('tabnew',g:zim_notebook,<q-args>)
 command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimCopy :call zim#note#Move(1, <f-args>)
 command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimMove :call zim#note#Move(0, <f-args>)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
@@ -127,6 +128,7 @@ let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
 "" Actions
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ '<cr>':{ 'i' : '<bar><Esc>:call zim#editor#CR("<bar>")<Cr>i' },
+      \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<Cr>' },
       \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<Cr>' },
       \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <Cr>' },
       \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<Cr>$a' },
@@ -171,7 +173,8 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ 'li':'<Leader>wl',
       \ 'checkbox':'<Leader>wc',
       \ 'checkbox_yes':'<F12>',
-      \ 'checkbox_no':'<S-F12>'
+      \ 'checkbox_no':'<S-F12>',
+      \ 'explore':'F9',
       \ })
 
 

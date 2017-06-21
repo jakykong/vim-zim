@@ -24,24 +24,61 @@ function! zim#util#_CompleteBook(A,L,P)
 endfunction
 
 "" Function to ease the placement of the windows from zimindex window
-"@param char prewincmd    <C-w> command to do before any control
-"@param char alonewcmd    <C-w> command to do when the zimindex is alone
-"@param char notalonewcmd <C-w> command to do when there is another window
-"@param char postwcmd     <C-w> command to do after the placement
-function! zim#util#setWindow(prewincmd,alonewcmd,notalonewcmd,postwcmd,file)
+"whereopen contains commands to create split
+"editopt   contains the commands like 'noswapfile' 
+"focused   is a 0 or 1 value to say to focus on new buffer
+"file      is the file full path
+function! zim#util#open(whereopen,editopt,focused,file)
   if a:file =~ '/' && a:file !~ '>'
-    if len(a:prewincmd) | exe 'wincmd '.a:prewincmd | endif
-    let l:buffer_exist=bufexists(a:file)
-    if exists('b:filetype') && b:filetype == 'zimindex'
-      " alone
-      if len(a:alonewcmd) | exe 'wincmd '.a:alonewcmd | endif
-    else
-      if len(a:notalonewcmd) | exe 'wincmd '.a:notalonewcmd | endif
-    endif
-    let l:ope=(l:buffer_exist? 'buffer ' : 'e ')
+    let l:current_win=winnr()
+    let l:ope=(bufexists(a:file)? 'buffer ' : a:editopt.' e ')
+    if len(a:whereopen) | exe a:whereopen | endif
     exe l:ope.a:file
-    if len(a:postwcmd) | exe 'wincmd '.a:postwcmd | endif
+    set ft=zim
+    if !a:focused
+      exe l:current_win.'wincmd w'
+    endif
   endif
+endfunction
+
+" Get the line number for a goto instruction set
+" See: :help g:zim_open_jump_to
+function! zim#util#line(goto_instrs)
+  let l:i=1
+  let l:step=1
+  let l:e=line('$')
+  let l:scroll = {'top':'zt', 'center': 'zz', 'bottom': 'zb'}
+  let l:mem = {}
+  for l:j in a:goto_instrs
+    if type(l:j) == type(0)
+      let l:i+=l:j
+    elseif type(l:j) == type({})
+      if has_key(l:j, 'scroll')
+        exe l:i
+        let l:scr=l:j['scroll'] 
+        if type(l:scr) != type([]) | let l:scr=[l:scr] | endif
+        for l:s in l:scr
+          if type(l:s) == type(0)
+            exe 'normal! '.abs(l:s).''.(l:s>0 ? '':'')
+          elseif has_key(l:scroll,l:s)
+            exe 'normal! '.l:scroll[l:s]
+          endif
+        endfor
+      endif
+      if has_key(l:j, 'get') | let l:mem[l:j['get']]=l:i | endif
+      if has_key(l:j, 'set') | let l:i=l:mem[l:j['set']] | endif
+      if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
+      if has_key(l:j, 'sens') | let l:step=(l:j['sens']==0?1:l:j['sens']) | endif
+    else
+      while l:i > 0 && l:i <= l:e && getline(l:i) !~ l:j
+        let l:i+=l:step
+      endwhile
+    endif
+    if l:i <= 0 | let l:i = 1 | break | endif
+    if l:i > l:e | let l:i = l:e | break | endif
+    unlet l:j  " E706 without this
+  endfor
+  return l:i
 endfunction
 
 "copy / move / rename files or directories interface

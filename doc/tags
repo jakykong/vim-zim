@@ -15,8 +15,13 @@ g:zim_notebook	zim.txt	/*g:zim_notebook*
 g:zim_notebooks_dir	zim.txt	/*g:zim_notebooks_dir*
 g:zim_open_jump_to	zim.txt	/*g:zim_open_jump_to*
 g:zim_update_index_key	zim.txt	/*g:zim_update_index_key*
+zim#util#line()	zim.txt	/*g:zim_open_jump_to*
+zim#util#open()	zim.txt	/*zim-api*
+zim-api	zim.txt	/*zim-api*
 zim-commands	zim.txt	/*zim-commands*
 zim-editing	zim.txt	/*zim-editing*
 zim-intro	zim.txt	/*zim-intro*
 zim-toc	zim.txt	/*Zim*
+zim-todolist	zim.txt	/*zim-todolist*
+zim-tricky	zim.txt	/*zim-tricky*
 zim-variables	zim.txt	/*zim-variables*
