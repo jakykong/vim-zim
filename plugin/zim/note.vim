@@ -28,7 +28,7 @@ function! zim#note#Create(whereopen,dir,name)
             call zim#note#Create(a:whereopen,g:zim_notebooks_dir,l:path)
           endif
         endfor
-        exe 'enew '.l:note
+        exe 'e '.l:note
         call zim#editor#CreateHeader()
         silent exe 'silent w'
         if has('win32')
@@ -45,7 +45,7 @@ function! zim#note#Create(whereopen,dir,name)
         endif
       else
         echomsg printf(zim#util#gettext("Note '%s' already exists"),l:dirs[0])
-        exe 'enew '.l:note
+        exe 'e '.l:note
       endif
     else
       echomsg printf(zim#util#gettext("NoteBook '%s' not exists"),l:dirs[0])
