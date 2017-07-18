@@ -2,9 +2,9 @@
 " Author: Jack Mudge <jakykong@theanythingbox.com>
 " * I declare this file to be in the public domain.
 "
-" Last Change:	2017 June 7
+" Last Change:	2017 July 18
 " Maintainer: Luffah <luffah@runbox.com>
-" Version: 0.2
+" Version: 1.1
 "
 " Changelog:
 " 2016-09-12 - Jack Mudge - v0.1
@@ -20,6 +20,11 @@
 " 2017-06-07 - luffah - v0.3
 "   * Add note and notebook creation commands
 "   * Add workarounds to force Zim re-indexing
+" 2017-06-13 - luffah - v1
+"   * Add notebook navigation features
+" 2017-06-07 - luffah - v1.1
+"   * Interaction with others files types
+"   * Add images insertion
 "
 " What This Plugin Does: 
 " * Provides shortcuts and helpful mappings to work with Zim wiki formatting.
@@ -72,7 +77,7 @@
 " " On note openning, go 2 lines after the first title
 " let g:zim_open_jump_to=["==.*==", 2]
 " " Or Go 2 lines after the last title
-" let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
+" let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]
 "
 """"""""""""""""""""""""""""""""
 " Plugin init 
@@ -81,7 +86,7 @@ if (!get(g:,'zim_dev',0) && get(g:,'loaded_zim',0)) || &cp | finish | endif
 
 "'"'""'"'"'"'"'"'"'"'"'"'"'"'"'"
 ""
-"  Avaible commands
+"  Globally avaible commands (other commands are defined in zim/note.vim)
 "
 command! ZimSelectNotebook :call zim#explorer#SelectNotebook('split')
 command! ZimCreateHeader :call zim#editor#CreateHeader()
@@ -94,6 +99,19 @@ command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimMove :call zim
 command! -nargs=1 -complete=customlist,zim#util#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
 command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 
+
+" The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
+let g:zim_matchable=get(g:,'zim_matchable',{
+      \'Title': '^\(=\+\).*\1$',
+      \'Checkbox': '^\(\s\{4}\)*\[[ ]\]\(\s\|$\)',
+      \'Li': '^\(\s\{4}\|\t\)*\*\(\s\|$\)',
+      \'NumberedItem': '^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)',
+      \'Link': '\[\[.*\]\]',
+      \'Img': '{{.*}}',
+      \'File': '\(\~\|\.\|^\| \|{\|\[\)/[.a-zA-Z0-9]\+',
+      \'Url': 'http[s]\?://[.a-zA-Z0-9]\+',
+      \ })
+
 if !has("win32")
   if get(g:,'zim_brutal_update_allowed', 0)
     command! ZimBrutalUpdate :silent !pkill -9 zim; zim & 
@@ -101,7 +119,6 @@ if !has("win32")
     delcommand ZimBrutalUpdate
   endif
 endif
-
 
 let g:zim_notebooks_dir=get(g:,'zim_notebooks_dir',expand("~/Notebooks"))
 let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
@@ -112,7 +129,25 @@ let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
 "
 "  Read this file if you want to customize zim.vim
 "
-
+"" External programs
+"if !has("win32")
+"else
+let g:zim_img_capture=get(g:,'zim_img_capture','sleep 2; scrot -s')
+" Note : in '\..*$','xdg-open', 1
+"           '\..*$' is a vim regular expression for any file extension
+"           'xdg-open' is the program
+"           1  express cardinality, it says to open one file per program
+"         if <number> is not present,
+"         then all files in a file list matching the .ext
+"         will be openned within the same command
+"         Example of cardinality for a selection of 3 filenames
+"         1 -> 'program file1.ext; program file2.ext; program file3.ext'
+" none or 0 -> 'program file1.ext file2.ext file3.ext'
+let g:zim_img_viewer=get(g:,'zim_img_viewer',['\..*$','xdg-open',1])
+let g:zim_img_editor=get(g:,'zim_img_editor',['\..*$','xdg-open',1])
+let g:zim_ext_viewer=get(g:,'zim_ext_viewer',['\..*$','xdg-open',1])
+let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
+"endif
 ""
 " Actions and keymapping : how it works ?
 " 
@@ -124,7 +159,6 @@ let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
 "
 " Default configuration provide a good example
 "
-
 "" Actions
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ '<cr>':{ 'i' : '<bar><Esc>:call zim#editor#CR("<bar>")<Cr>i' },
@@ -134,11 +168,29 @@ let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<Cr>$a' },
       \ 'title': { 'n':  ':call zim#editor#Title()<CR>' },
       \ 'header':       { 'n':  ':call zim#editor#CreateHeader()<CR>' },
+      \ 'showimg':       {
+      \    'v':  ':call zim#editor#ShowImageBulk(g:zim_img_viewer)<CR>',
+      \    'n':  ':call zim#editor#ShowImage(g:zim_img_viewer)<CR>'
+      \},
+      \ 'editimg':       {
+      \    'v':  ':call zim#editor#ShowImageBulk(g:zim_img_editor)<CR>',
+      \    'n':  ':call zim#editor#ShowImage(g:zim_img_editor)<CR>'
+      \},
+      \ 'showfile':       {
+      \    'v':  ':call zim#editor#ShowFileBulk(g:zim_ext_viewer)<CR>',
+      \    'n':  ':call zim#editor#ShowFile(g:zim_ext_viewer)<CR>'
+      \},
+      \ 'editfile':       {
+      \    'v':  ':call zim#editor#ShowFileBulk(g:zim_ext_editor)<CR>',
+      \    'n':  ':call zim#editor#ShowFile(g:zim_ext_editor)<CR>'
+      \},
       \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<cr>' },
       \ 'li':           { 'n': ":call zim#editor#Bullet('*')<cr>" },
       \ 'checkbox':     { 'n': ":call zim#editor#Bullet('[ ]')<cr>" },
       \ 'checkbox_yes': { 'n': ":call zim#editor#Bullet('[*]')<cr>" },
       \ 'checkbox_no':  { 'n': ":call zim#editor#Bullet('[x]')<cr>" },
+      \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<cr>'},
+      \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<cr>'},
       \ 'bold':{
       \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR>',
       \   'n': ':call zim#editor#ToggleStyle("**")<CR>'
@@ -174,7 +226,13 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ 'checkbox':'<Leader>wc',
       \ 'checkbox_yes':'<F12>',
       \ 'checkbox_no':'<S-F12>',
+      \ 'date':'<Leader>wd',
+      \ 'datehour':'<Leader>wD',
       \ 'explore':'F9',
+      \ 'showimg':'<F3>',
+      \ 'editimg':'<S-F3>',
+      \ 'showfile':'<F4>',
+      \ 'editfile':'<S-F4>',
       \ })
 
 
@@ -211,10 +269,14 @@ let g:zim_open_jump_to=get(g:,'zim_open_jump_to',
 let g:zim_wiki_lang=get(g:,'zim_wiki_lang','fr')
 let g:zim_wiki_prompt={
       \ 'en' : { 'note_name' : 'Name of the new note',
+      \          'dateformat': "%d/%m/%Y",
+      \          'datehourformat': "%d/%m/%Y %H:%M",
       \          'title_level': "Title level (between 1 and 5 , else remove style)",
       \          'note_out_of_notebook': "Notes shall be created in a notebook... Aborting",
       \        },
       \ 'fr' : { 'note_name' : 'Nom de la nouvelle note',
+      \          'dateformat': "%d/%m/%Y",
+      \          'datehourformat': "%d/%m/%Y %H:%M",
       \          'title_level': "Niveau de titre (de 1 à 5 , sinon retire le style)",
       \          "'%s' created": "La note %s a été créée",
       \          "NoteBook '%s' created": "Le bloc-note %s a été créée",

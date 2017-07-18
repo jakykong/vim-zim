@@ -1,4 +1,3 @@
-
 "" Create Zim header in a buffer, i.e., for a new file
 "" If files are created within Zim, this is already completed
 function! zim#editor#CreateHeader()
@@ -84,50 +83,6 @@ function! zim#editor#NextBullet(l)
   endif
   return l:ret
 endfu
-
-function! s:getLinkPath(tgt)
-  let l:tgt=''
-  if len(a:tgt)
-    let l:tgt=substitute(
-          \ substitute(a:tgt,':','/','g'),
-          \ ' ','_','g').'.txt'
-    let l:notebook=expand('%:p:s?'.g:zim_notebooks_dir.'[/]*??:s?/.*$??')
-    let l:tgt=g:zim_notebooks_dir.'/'.l:notebook.'/'.l:tgt
-  endif
-  return l:tgt
-endfunction
-
-function! s:getLinkUnderCursor()
-  let l:pos=col('.')
-  let l:l=getline('.')
-  let l:matches=[]
-  let l:tgt=''
-  let l:prev=0
-  let l:b=match(l:l, '\[\[.*\]\]',l:prev)
-  let l:e=(l:b > -1) ? match(l:l, '\(\]\]\||\)', l:b) : -1
-  while l:e > -1
-    if l:pos >= l:b && l:pos <= l:e
-      let l:tgt=strpart(l:l, l:b+2, l:e-l:b-2)
-      break
-    endif
-    let l:b=match(l:l, '\[\[.*\]\]',l:prev)
-    let l:e=(l:b > -1) ? match(l:l, '\(\]\]\||\)', l:b) : -1
-  endwhile
-  return s:getLinkPath(l:tgt)
-endfunction
-
-function! zim#editor#JumpToLinkUnderCursor()
-  let l:path=s:getLinkUnderCursor()
-  let l:self=expand('%:p')
-  if len(l:path) || len(a:edit_cmd)
-     if bufexists(l:path)
-       exe 'buffer '.l:path
-     else
-       exe 'e '.l:path
-     endif
-  endif
-  let b:zim_last_backlink=l:self
-endfunction
 
 "" Insert bullet if we are at the end of the string, else split line
 "" the cr substitute char is needed in order to mark the line return
@@ -226,4 +181,201 @@ function! zim#editor#ToggleStyleBlock(style)
     endfor
   endif
 endfu
+
+"" functions to manage links
+function! s:get_visual_selection()
+  let [lnum1, col1] = getpos("'<")[1:2]
+  let [lnum2, col2] = getpos("'>")[1:2]
+  let lines = getline(lnum1, lnum2)
+  let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
+  let lines[0] = lines[0][col1 - 1:]
+  return join(lines, "\n")
+endfunction
+
+function! s:getLinkPath(tgt)
+  let l:tgt=''
+  if len(a:tgt)
+    " ignore if it is not in notebook
+    if match(a:tgt,'^\(\~/\|http[s]\?://\|/\)')> -1
+      return a:tgt
+    endif
+    if match(a:tgt,'^\(href=\)')> -1
+      return strpart(a:tgt,5)
+    endif
+    let l:tgt=substitute(
+          \ substitute(a:tgt,':','/','g'),
+          \ ' ','_','g').'.txt'
+    let l:notebook=expand('%:p:s?'.g:zim_notebooks_dir.'[/]*??:s?/.*$??')
+    let l:tgt=g:zim_notebooks_dir.'/'.l:notebook.'/'.l:tgt
+  endif
+  return l:tgt
+endfunction
+
+function! s:getLinkComponentsUnderCursor(begin,end,sep)
+  let l:pos=col('.')
+  let l:l=getline('.')
+  let l:pat=a:begin.'.*'.a:end
+  let [l:b, l:e]=[0,0]
+  while ((l:e>=0) && (l:b>=0) && (l:pos > l:b + l:e))
+    let l:b=match(l:l, l:pat, l:b + l:e)
+    if (l:b>=0)
+      let l:bmatch=matchstr(l:l, a:begin, l:b + l:e)
+      let l:e=match(l:l, a:end, l:b)
+    endif
+  endwhile
+  if (l:b < 0)
+    return []
+  endif
+  let l:tgt=strpart(l:l, l:b+len(l:bmatch), l:e-l:b)
+  return split(l:tgt,a:sep)
+endfunction
+
+function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
+  let l:pat=a:begin.'[a-zA-Z/.0-9éà_-]\+'.a:end
+  let l:links=[]
+  echomsg '-'.l:pat.'-'
+  let [l:b, l:e]=[0,0]
+  while (l:b >= 0 && l:e >=0)
+    let l:b=match(a:str, l:pat, l:e)
+    if (l:b>=0)
+      let l:bmatch=matchstr(a:str, a:begin, l:e)
+      let l:e=match(a:str, a:end, l:b+len(l:bmatch))
+      if (l:e>=0 )
+        let l:tgt=strpart(a:str, l:b+len(l:bmatch), l:e-l:b)
+        call add(l:links,split(l:tgt,a:sep)[a:idx])
+      endif
+    endif
+  endwhile
+  return l:links
+endfunction
+
+function! zim#editor#JumpToLinkUnderCursor()
+  let l:components=s:getLinkComponentsUnderCursor('\[\[','\]\]','|')
+  if empty(l:components)
+    return 0
+  endif
+  let l:path=s:getLinkPath(l:components[0])
+  let l:self=expand('%:p')
+  if len(l:path) 
+     if bufexists(l:path)
+       exe 'buffer '.l:path
+     else
+       exe 'e '.l:path
+     endif
+  endif
+  let b:zim_last_backlink=l:self
+endfunction
+
+""" functions to manage images and external files
+function! s:showFiles(imgs, openners)
+  let l:opens={}
+  let l:idx=1
+  let l:cnt=0
+  for l:i in a:imgs
+    let l:cnt+=1
+    let l:path=s:getLinkPath(l:i)
+    if len(l:path)
+      for l:j in a:openners
+        let l:p=l:j[0]
+        let l:i=str2nr(get(l:j,2,0))
+        if (l:i && l:cnt > l:i)
+          let l:idx+=1
+          let l:cnt=0
+        endif
+        if (match(l:path, l:p) > -1)
+          if has_key(l:opens, l:p)
+            let l:opens[l:p.'@'.l:idx].=' '.l:path
+          else
+            let l:opens[l:p.'@'.l:idx]=l:j[1].' '.l:path
+          endif
+          break
+        endif
+      endfor
+    endif
+  endfor
+  for l:i in keys(l:opens)
+    "    silent exe '!'.l:opens[i].'&'
+    exe '!'.l:opens[i].'&'
+  endfor
+endfunction
+
+function! zim#editor#InsertImage(imgfname,captureprg)
+  let l:imgfname=a:imgfname
+  if (match(l:imgfname,'^/') < 0)
+    let l:imgfname='~/'.l:imgfname
+  endif
+  if (len(a:captureprg))
+    "    silent! exe '!'.a:captureprg.' '.l:imgfname.'&'
+    exe '!'.a:captureprg.' '.l:imgfname
+  endif
+  exe 'norm i{{'.l:imgfname.'?href=#}}'
+endfunction
+
+function! zim#editor#ShowFile(openners)
+  let l:components=s:getLinkComponentsUnderCursor('https://','\(\|$\| \|}\|\]\)\+','\(|\|?\)')
+  if len(l:components)
+    let l:components[0]='https://'.l:components[0]
+  else
+    let l:components=s:getLinkComponentsUnderCursor('http://','\(\|$\| \|}\|\]\)\+','\(|\|?\)')
+  endif
+  if len(l:components)
+    " just add 's' to 'http' with an option to implement a kind of https everywhere
+    let l:components[0]='http://'.l:components[0]
+  else
+    let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)')
+  endif
+  if len(l:components)
+    let l:components[0]='/'.l:components[0]
+  else
+    return 0
+  endif
+  call s:showFiles([l:components[0]],a:openners)
+endfunction
+
+function! zim#editor#ShowFileBulk(openners) range
+  norm gv
+  let l:str=substitute(s:get_visual_selection(),'\n',' ','g')
+  let l:files=map(
+        \s:getAllLinkComponentsInStr(l:str,'https://','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+        \'"https://".v:val')
+  if empty(l:files)
+    let l:files=map(
+          \s:getAllLinkComponentsInStr(l:str,'http://','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+          \'"http://".v:val')
+  endif
+  if empty(l:files)
+    let l:files=map(
+          \s:getAllLinkComponentsInStr(l:str,'\( \|{\|\|\[\|^\)\+/','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+          \'"/".v:val')
+  endif
+
+  call s:showFiles(l:files,  a:openners)
+endfunction
+
+function! zim#editor#ShowImage(openners)
+  let l:components=s:getLinkComponentsUnderCursor('{{','}}','?')
+  if empty(l:components)
+    return 0
+  endif
+  call s:showFiles([l:components[0]],a:openners)
+endfunction
+
+function! zim#editor#ShowImageBulk(openners) range
+  norm gv
+  call s:showFiles(
+        \ s:getAllLinkComponentsInStr(s:get_visual_selection(),'{{','}}','?',0),
+        \ a:openners
+  )
+endfunction
+
+function! zim#editor#ShowImageLink()
+  let l:components=s:getLinkComponentsUnderCursor('{{','}}','?')
+  if len(l:components) < 2
+    return 0
+  endif
+  let l:path=s:getLinkPath(l:components[1])
+  if len(l:path) 
+     echo  l:path
+  endif
+endfunction
 

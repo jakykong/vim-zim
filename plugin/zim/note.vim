@@ -179,13 +179,22 @@ function! s:setBufferSpecific()
     endif
   endfor
   
-  " add commamds
+  " add commamds avaible for the note
   command! -buffer -nargs=* ZimGrepThis :call zim#explorer#SearchInNotebook(expand('<cword>'))
   command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
+
+  command! -buffer -nargs=1 -complete=file ZimImgInsert :call zim#editor#InsertImage(<q-args>,'')
+  command! -buffer -nargs=1 -complete=file ZimImgCapture :call zim#editor#InsertImage(<q-args>,g:zim_img_capture)
+
+  for s:el in keys(g:zim_matchable)
+    exe 'command! -buffer ZimMatchNext'.s:el." :exe zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')+1,1)"
+    exe 'command! -buffer ZimMatchPrev'.s:el." :exe zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1)"
+  endfor
+
   
   let l:i=line('.')
   if l:i == 1
-    let l:i=zim#util#line(g:zim_open_jump_to)
+    let l:i=zim#util#line(g:zim_open_jump_to, 1, 1)
   endif
   if l:i == 1 && g:zim_open_skip_header
     while getline(l:i) =~ 

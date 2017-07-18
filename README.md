@@ -15,7 +15,7 @@ Zim Desktop Wiki plugin for Vim
 This version is a beta of what could be published by Jack Mudge
 on VimScript.org.
 
-Current version : 1.0
+Current version : 1.1
 
 How to install
 ================================
@@ -61,6 +61,9 @@ This section give some details about the development of this plugin.
 * Multilingual : English, French // translations can be added in file plugin/zim.vim
 * You can now Search and jump to another note
 
+#### 2017-07-18 - Luffah <luffah@runbox.com>
+* Allow to open files listed in a note with an external editor
+* Add some tricks in help
 
 ## Versions details
 #### Version 0

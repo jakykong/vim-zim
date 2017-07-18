@@ -31,15 +31,18 @@ syn match Identifier /\[\[.*\]\]/
 
 " Checkbox
 syn match zimCheckbox /^\(\s\{4}\)*\[[ ]\]\(\s\|$\)/
-syn match zimYes /^\(\s\{4}\)*\[[\*]\]\(\s\|$\)/
-syn match zimNo  /^\(\s\{4}\)*\[[x ]\]\(\s\|$\)/
-highlight zimCheckbox gui=bold guifg=black guibg=#cccccc term=bold ctermfg=0
-highlight zimYes gui=bold guifg=darkgreen guibg=#cccccc term=bold ctermfg=2
-highlight zimNo  gui=bold guifg=darkred guibg=#cccccc term=bold ctermfg=8
+syn match zimYes /^\(\s\{4}\)*\[\*\]\(\s\|$\)/
+syn match zimNo  /^\(\s\{4}\)*\[x\]\(\s\|$\)/
+highlight zimCheckbox gui=bold guifg=black guibg=#dcdcdc term=bold ctermfg=0 ctermbg=7
+highlight zimYes gui=bold guifg=#65B616 guibg=#dcdcdc term=bold ctermfg=2 ctermbg=7
+highlight zimNo  gui=bold guifg=#AF0000 guibg=#dcdcdc term=bold ctermfg=1 ctermbg=7
 
-" Bullet
-syn match ZimBullet /^\(\s\{4}\)*\*\(\s\|$\)/
-highlight zimBullet gui=bold guifg=black guibg=#cccccc term=bold ctermfg=0
+" Lists
+syn match ZimBulletItem /^\(\s\{4}\|\t\)*\*\(\s\|$\)/
+syn match ZimNumberedItem /^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)/
+"highlight zimBulletItem gui=bold guifg=black guibg=#f4f4f4 term=bold ctermfg=0
+hi link ZimBulletItem Special 
+hi link ZimNumberedItem Special 
 
 " Style : bold
 syn match zimBold /\*\*.*\*\*/
@@ -56,6 +59,24 @@ highlight link zimHighlighted DiffChange
 " Style : strikethrough
 syn match zimStrikethrough /\~\~.*\~\~/
 highlight link zimStrikethrough NonText
+
+
+"" Next style definitions are based on the fork of YaoPo Wang <blue119@gmail.com>
+"" which include joanrivera vim-zimwiki-syntax <joan.manuel.rivera+dev@gmail.com>
+"" https://github.com/joanrivera/vim-zimwiki-syntax (MIT Licence)
+" Style : code
+syn region zimwikiCode start="'''" end="'''"
+hi def link zimwikiCode	SpecialComment
+
+" Style : sub and sup
+syn match zimwikiSub '_{.\{-1,}}'
+syn match zimwikiSup '\^{.\{-1,}}'
+hi def link zimwikiSub	Number
+hi def link zimwikiSup	Number
+
+" Style : image
+syn match zimwikiImage '{{.\{-1,}}}'
+hi def link zimwikiImage Float
 
 
 let b:current_syntax = "zim"

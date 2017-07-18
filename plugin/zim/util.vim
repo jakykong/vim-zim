@@ -43,9 +43,10 @@ endfunction
 
 " Get the line number for a goto instruction set
 " See: :help g:zim_open_jump_to
-function! zim#util#line(goto_instrs)
-  let l:i=1
-  let l:step=1
+function! zim#util#line(goto_instrs, ...)
+  let l:i=get(a:000,0,1)
+  let l:step=get(a:000,1,1)
+  let l:default=0
   let l:e=line('$')
   let l:scroll = {'top':'zt', 'center': 'zz', 'bottom': 'zb'}
   let l:mem = {}
@@ -69,13 +70,15 @@ function! zim#util#line(goto_instrs)
       if has_key(l:j, 'set') | let l:i=l:mem[l:j['set']] | endif
       if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
       if has_key(l:j, 'sens') | let l:step=(l:j['sens']==0?1:l:j['sens']) | endif
+      if has_key(l:j, 'default') | let l:default=l:j['default'] | endif
     else
+      "find a line matching the pattern
       while l:i > 0 && l:i <= l:e && getline(l:i) !~ l:j
         let l:i+=l:step
       endwhile
     endif
-    if l:i <= 0 | let l:i = 1 | break | endif
-    if l:i > l:e | let l:i = l:e | break | endif
+    if l:i <= 0 | let l:i = l:default ? l:default : 1 | break | endif
+    if l:i >= l:e | let l:i = l:default ? l:default : l:e | break | endif
     unlet l:j  " E706 without this
   endfor
   return l:i

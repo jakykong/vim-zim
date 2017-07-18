@@ -106,7 +106,9 @@ VARIABLES                                                       *zim-variables*
 
                    The array can contain 3 types of variables (mouvements),
                    with different meanings :
-                     string   text pattern  e.g. My Awesome Title 
+                     string   text pattern  e.g. 'My Awesome Title'
+                                            e.g. '^\(=\+\).*\1$'
+                              see *regular-expression* *regexp*
 
                      integer  line delta  e.g. -1 to go back 1 line
 
@@ -134,6 +136,72 @@ VARIABLES                                                       *zim-variables*
                    " Or Go 2 lines after the last title
                    let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
 
+*g:zim_matchable*
+                   Enable commands ZimMatchNext<Matchable> and
+                   ZimMatchPrev<Matchable>.
+
+                   dict {
+                     'Title': text pattern  e.g. '^\(=\+\).*\1$',
+                              see *regular-expression* *regexp*
+                      ...
+                   }
+
+                   Examples :
+                   " have a match for almost every zim standard element
+                   let g:zim_matchable={
+                       \'Title':        '^\(=\+\).*\1$',
+                       \'Checkbox':     '^\(\s\{4}\)*\[[ ]\]\(\s\|$\)',
+                       \'Li':           '^\(\s\{4}\|\t\)*\*\(\s\|$\)',
+                       \'NumberedItem': '^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)',
+                       \'Link':         '\[\[.*\]\]',
+                       \'Img':          '{{.*}}',
+                       \'File':         '\(\~\|\.\|^\| \|{\|\[\)/[.a-zA-Z0-9]\+',
+                       \'Url':          'http[s]\?://[.a-zA-Z0-9]\+',
+                       \ }
+
+
+*g:zim_img_capture*
+                   Define a shell command to capture screenshots.
+                   Default : 'sleep 2; scrot -s'
+                             "wait 2 second to avoid scrot capturing keys
+                   This default only work for linux.
+
+*g:zim_img_viewer*
+*g:zim_img_editor*
+*g:zim_ext_viewer*
+*g:zim_ext_editor*
+                   Define viewer and editor commands based of the file type.
+
+                   *g:zim_img_viewer* and *g:zim_ext_editor*
+                     are specific to Zim images ( between {{ }} ).
+
+                   array [
+                      array [
+                        (filetype)      text-pattern,
+                                        see *regular-expression* *regexp*
+                        (shell command) text,
+                        (optionnal)     number
+                              0 to open all matched files in one instance
+                              1 to open one file per instance
+                              n to open n   files per instance
+                              Default is 0.
+                      ]
+                      array ...
+                    ]
+                    Example :
+                    " Open in images in feh
+                    let g:zim_img_viewer=[
+                      \[
+                      \  '\.\(png\|jp[e]\?g\|svg\|gif\)$',
+                      \  'feh --magick-timeout 1'
+                      \],
+                    \]
+
+                    If no overide is done, default openner is 'xdg-open',
+                    which shall not work on Windows.
+*g:zim_dev*
+                    For developers.
+                    Set to 1 to reload function on plugin/zim.vim sourcing.
 
 *g:zim_dev*
                     For developers.
@@ -148,6 +216,9 @@ COMMANDS                                                        *zim-commands*
                     Arguments are completed in wild menu.
 
                     Set |g:zim_notebook| = <notebook_name>
+
+:ZimListThis                                                         *:ZimList*
+                    :ZimList with word under cursor.
 
 :ZimList <note_name_pattern>                                         *:ZimList*
                     Arguments are completed in wild menu.
@@ -224,6 +295,9 @@ COMMANDS                                                        *zim-commands*
                     If |g:zim_update_index_key| is set and `xdotool` is found,
                     then it tries to locate Zim window and to send the key.
 
+:ZimGrepThis                                                         *:ZimGrep*
+                    :ZimGrep with word under cursor.
+
 :ZimGrep <pattern>                                                   *:ZimGrep*
                     Open a location list for
                     the matches of <pattern> in g:zim_notebook.
@@ -232,6 +306,18 @@ COMMANDS                                                        *zim-commands*
                     Open a temporary window to choose the current notebook. 
                     
                     Set |g:zim_notebook|
+
+:ZimImgInsert  <filepath>                                       *:ZimImgInsert*
+                    Insert image pointed by filepath at cursor position. 
+                    
+:ZimImgCapture  <filepath>                                     *:ZimImgCapture*
+                    Make a screenshot and save it in filepath,
+                    next, the image is inserted at cursor position. 
+                    
+:ZimMatchPrev...                                     *:ZimMatchPrev...*
+:ZimMatchNext...                                     *:ZimMatchNext...*
+                    Go to the previous / next position of the element type.
+                    See *g:zim_matchable*
 
 
 ==============================================================================
@@ -255,6 +341,13 @@ Here is a summary of the default settings.
 |all_checkbox_to_li | n   | <F8>         |_ Facility to remove every checkbox
 |header             | n   | <Leader>wH   |_ Add a Zim Header and set the first
 |                   |     |              |   title
+|date               | n   | <Leader>d    |_ Insert today date
+|datehour           | n   | <Leader>D    |_ Insert today date and hour
+|showimg            | n   | <F3>         |_ Open image in viewer
+|editimg            | n   | <S-F3>       |_ Open image in editor
+|showfile           | n   | <F4>         |_ Open file in viewer
+|editfile           | n   | <S-F4>       |_ Open file in editor
+|
 ==Navigation==
 |jump               | n   | <Leader>g    |_ Jump to another note
 |jump_back          | n   | <Leader>G    |_ Jump back
