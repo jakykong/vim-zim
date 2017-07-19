@@ -226,14 +226,14 @@ function! s:getLinkComponentsUnderCursor(begin,end,sep)
   if (l:b < 0)
     return []
   endif
-  let l:tgt=strpart(l:l, l:b+len(l:bmatch), l:e-l:b)
+  let l:b=l:b+len(l:bmatch)
+  let l:tgt=strpart(l:l, l:b, l:e-l:b)
   return split(l:tgt,a:sep)
 endfunction
 
 function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
   let l:pat=a:begin.'[a-zA-Z/.0-9éà_-]\+'.a:end
   let l:links=[]
-  echomsg '-'.l:pat.'-'
   let [l:b, l:e]=[0,0]
   while (l:b >= 0 && l:e >=0)
     let l:b=match(a:str, l:pat, l:e)
@@ -241,7 +241,8 @@ function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
       let l:bmatch=matchstr(a:str, a:begin, l:e)
       let l:e=match(a:str, a:end, l:b+len(l:bmatch))
       if (l:e>=0 )
-        let l:tgt=strpart(a:str, l:b+len(l:bmatch), l:e-l:b)
+        let l:b=l:b+len(l:bmatch))
+        let l:tgt=strpart(a:str, l:b, l:e-l:b)
         call add(l:links,split(l:tgt,a:sep)[a:idx])
       endif
     endif
