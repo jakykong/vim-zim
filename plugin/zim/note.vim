@@ -170,15 +170,6 @@ function! s:setBufferSpecific()
   setlocal softtabstop=4
   setlocal shiftwidth=4
   
-  " add key mappings
-  for l:k in keys(g:zim_edit_actions)
-    if has_key(g:zim_keymapping,l:k)
-      for l:m in keys(g:zim_edit_actions[l:k])
-        exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
-      endfor
-    endif
-  endfor
-  
   " add commamds avaible for the note
   command! -buffer -nargs=* ZimGrepThis :call zim#explorer#SearchInNotebook(expand('<cword>'))
   command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
@@ -191,7 +182,24 @@ function! s:setBufferSpecific()
     exe 'command! -buffer ZimMatchPrev'.s:el." :exe zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1)"
   endfor
 
-  
+  " Add next and prev matchable items to mappable actions (to use it as shortcut)
+  for s:el in keys(g:zim_matchable)
+    let g:zim_edit_actions['next'.s:el]={
+          \'n': ":ZimMatchNext".s:el."<Cr>"
+          \}
+    let g:zim_edit_actions['prev'.s:el]={
+          \'n': ":ZimMatchPrev".s:el."<Cr>"
+          \}
+  endfor
+
+  " add key mappings
+  for l:k in keys(g:zim_edit_actions)
+    if has_key(g:zim_keymapping,l:k)
+      for l:m in keys(g:zim_edit_actions[l:k])
+        exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
+      endfor
+    endif
+  endfor
   let l:i=line('.')
   if l:i == 1
     let l:i=zim#util#line(g:zim_open_jump_to, 1, 1)

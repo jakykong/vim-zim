@@ -232,7 +232,7 @@ function! s:getLinkComponentsUnderCursor(begin,end,sep)
 endfunction
 
 function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
-  let l:pat=a:begin.'[a-zA-Z/.0-9éà_-]\+'.a:end
+  let l:pat=a:begin.'[a-zA-Z/.0-9éà_-]\+\('.a:end.'\|'.a:sep.'\)'
   let l:links=[]
   let [l:b, l:e]=[0,0]
   while (l:b >= 0 && l:e >=0)
@@ -241,7 +241,7 @@ function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
       let l:bmatch=matchstr(a:str, a:begin, l:e)
       let l:e=match(a:str, a:end, l:b+len(l:bmatch))
       if (l:e>=0 )
-        let l:b=l:b+len(l:bmatch))
+        let l:b=l:b+len(l:bmatch)
         let l:tgt=strpart(a:str, l:b, l:e-l:b)
         call add(l:links,split(l:tgt,a:sep)[a:idx])
       endif
@@ -253,6 +253,7 @@ endfunction
 function! zim#editor#JumpToLinkUnderCursor()
   let l:components=s:getLinkComponentsUnderCursor('\[\[','\]\]','|')
   if empty(l:components)
+    norm! gF
     return 0
   endif
   let l:path=s:getLinkPath(l:components[0])
@@ -284,10 +285,11 @@ function! s:showFiles(imgs, openners)
           let l:cnt=0
         endif
         if (match(l:path, l:p) > -1)
-          if has_key(l:opens, l:p)
-            let l:opens[l:p.'@'.l:idx].=' '.l:path
+          let l:k=l:p.'@'.l:idx
+          if has_key(l:opens, l:k)
+            let l:opens[l:k].=' '.l:path
           else
-            let l:opens[l:p.'@'.l:idx]=l:j[1].' '.l:path
+            let l:opens[l:k]=l:j[1].' '.l:path
           endif
           break
         endif
@@ -313,17 +315,17 @@ function! zim#editor#InsertImage(imgfname,captureprg)
 endfunction
 
 function! zim#editor#ShowFile(openners)
-  let l:components=s:getLinkComponentsUnderCursor('https://','\(\|$\| \|}\|\]\)\+','\(|\|?\)')
+  let l:components=s:getLinkComponentsUnderCursor('https://','\(\|$\| \|}\|\]\)','\(|\|?\)')
   if len(l:components)
     let l:components[0]='https://'.l:components[0]
   else
-    let l:components=s:getLinkComponentsUnderCursor('http://','\(\|$\| \|}\|\]\)\+','\(|\|?\)')
+    let l:components=s:getLinkComponentsUnderCursor('http://','\(\|$\| \|}\|\]\)','\(|\|?\)')
   endif
   if len(l:components)
     " just add 's' to 'http' with an option to implement a kind of https everywhere
     let l:components[0]='http://'.l:components[0]
   else
-    let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)')
+    let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)')
   endif
   if len(l:components)
     let l:components[0]='/'.l:components[0]
@@ -337,16 +339,16 @@ function! zim#editor#ShowFileBulk(openners) range
   norm gv
   let l:str=substitute(s:get_visual_selection(),'\n',' ','g')
   let l:files=map(
-        \s:getAllLinkComponentsInStr(l:str,'https://','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+        \s:getAllLinkComponentsInStr(l:str,'https://','\(\|$\| \|}\|?\|\]\)','\(|\|?\)',0),
         \'"https://".v:val')
   if empty(l:files)
     let l:files=map(
-          \s:getAllLinkComponentsInStr(l:str,'http://','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+          \s:getAllLinkComponentsInStr(l:str,'http://','\(\|$\| \|}\|?\|\]\)','\(|\|?\)',0),
           \'"http://".v:val')
   endif
   if empty(l:files)
     let l:files=map(
-          \s:getAllLinkComponentsInStr(l:str,'\( \|{\|\|\[\|^\)\+/','\(\|$\| \|}\|?\|\]\)\+','\(|\|?\)',0),
+          \s:getAllLinkComponentsInStr(l:str,'\( \|{\|\|\[\|^\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)',0),
           \'"/".v:val')
   endif
 
@@ -366,7 +368,7 @@ function! zim#editor#ShowImageBulk(openners) range
   call s:showFiles(
         \ s:getAllLinkComponentsInStr(s:get_visual_selection(),'{{','}}','?',0),
         \ a:openners
-  )
+        \)
 endfunction
 
 function! zim#editor#ShowImageLink()

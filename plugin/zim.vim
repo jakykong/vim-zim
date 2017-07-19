@@ -102,6 +102,14 @@ command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 
 " The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
 let g:zim_matchable=get(g:,'zim_matchable',{
+      \'KeyElement': '\(' .
+                    \ '==' .
+                    \ '\|{{' .
+                    \ '\|\*'.
+                    \ '\|\[\(\[\| \)' .
+                    \ '\|\d\+\.\s' .
+                    \ '\|/[.a-zA-Z0-9]\+' .
+                    \ '\)',
       \'Title': '^\(=\+\).*\1$',
       \'Checkbox': '^\(\s\{4}\)*\[[ ]\]\(\s\|$\)',
       \'Li': '^\(\s\{4}\|\t\)*\*\(\s\|$\)',
