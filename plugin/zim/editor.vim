@@ -326,11 +326,11 @@ function! zim#editor#ShowFile(openners)
     let l:components[0]='http://'.l:components[0]
   else
     let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)')
-  endif
-  if len(l:components)
-    let l:components[0]='/'.l:components[0]
-  else
-    return 0
+    if len(l:components)
+      let l:components[0]='/'.l:components[0]
+    else
+      return 0
+    endif
   endif
   call s:showFiles([l:components[0]],a:openners)
 endfunction

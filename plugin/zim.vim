@@ -248,12 +248,14 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
 let g:zim_wiki_version=get(g:,'zim_wiki_version','0.4')
 
 """ Configuration dir of Zim
-if has('win32')
-  let g:zim_config_dir=''
-else
-  let g:zim_config_dir=get(g:,'zim_config_dir',expand('$XDG_CONFIG_HOME/zim'))
+let g:zim_config_dir=get(g:,'zim_config_dir','')
+if (! len(g:zim_config_dir))
+  if has('win32')
+    let g:zim_config_dir=''
+  else
+    let g:zim_config_dir=(expand('$XDG_CONFIG_HOME') || expand('$HOME/.config')).'/zim'
+  endif
 endif
-
 "" When g:zim_open_skip_header is set to true (1),
 "" the note is openned on the first line after the header.
 let g:zim_open_skip_header=get(g:,'zim_open_skip_header',1)
