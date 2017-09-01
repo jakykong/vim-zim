@@ -199,6 +199,11 @@ VARIABLES                                                       *zim-variables*
 
                     If no overide is done, default openner is 'xdg-open',
                     which shall not work on Windows.
+
+                    To use this functionnality, you need to add to 
+                    the actions 'show_img','edit_img','show_file','edit_file'
+                    in *g:zim_keymapping*.
+
 *g:zim_dev*
                     For developers.
                     Set to 1 to reload function on plugin/zim.vim sourcing.

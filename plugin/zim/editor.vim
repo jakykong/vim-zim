@@ -298,7 +298,7 @@ function! s:showFiles(imgs, openners)
   endfor
   for l:i in keys(l:opens)
     "    silent exe '!'.l:opens[i].'&'
-    exe '!'.l:opens[i].'&'
+    exe '!'.l:opens[i].' &'
   endfor
 endfunction
 

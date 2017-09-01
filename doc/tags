@@ -16,8 +16,8 @@ ZimEditingShorcuts	zim.txt	/*zim-editing*
 ZimUpdateIndex	zim.txt	/*zim-variables*
 g:zim_brutal_update_allowed	zim.txt	/*g:zim_brutal_update_allowed*
 g:zim_dev	zim.txt	/*g:zim_dev*
-g:zim_file_editor	zim.txt	/*g:zim_file_editor*
-g:zim_file_viewer	zim.txt	/*g:zim_file_viewer*
+g:zim_ext_editor	zim.txt	/*g:zim_ext_editor*
+g:zim_ext_viewer	zim.txt	/*g:zim_ext_viewer*
 g:zim_img_capture	zim.txt	/*g:zim_img_capture*
 g:zim_img_editor	zim.txt	/*g:zim_img_editor*
 g:zim_img_viewer	zim.txt	/*g:zim_img_viewer*
