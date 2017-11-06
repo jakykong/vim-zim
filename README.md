@@ -1,5 +1,21 @@
 Zim Desktop Wiki plugin for Vim
 ================================
+This plugin allow to use all Zim notes in Vim.
+It is especially useful :
+
+* when you want to use Vim to edit your note
+* when you need to fetch informations stored in your NoteBooks
+
+Examples :
+
+* you want all notes mentioning 'foo' : just do `:ZimGrep foo`
+* you want all notes named 'something-foo' : do `:ZimList foo`
+* you want to create a new note : `:ZimNewNote Notes/foo/A Great Name For Bar` will create the files `foo.txt` titled `foo`, and `foo/A_Great_Name_For_Bar.txt` titled `A Great Name For Bar`
+* note that you can use <Tab> completion to get your path with `:ZimNewNote` and `:ZimList`
+* you need to organize the notes in the Notebook foo `:ZimList foo` and use d(detect double) D(delete) N(new note) m(move) R(Rename) keys
+
+Here we go
+================================
 ```
             ___    /   /                                              
            |_ _|  /  /         _________      _                       
@@ -94,7 +110,7 @@ See : https://github.com/jakykong/vim-zim/README for more information
 
 #### Version 1
 ```
-Author: Luffah <luffah@runbox.com>
+Author: Luffah
 URL: https://github.com/luffah/vim-zim
 Version: 1.0
 License: Public Domain

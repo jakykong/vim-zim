@@ -1,6 +1,6 @@
 "" Create Zim header in a buffer, i.e., for a new file
 "" If files are created within Zim, this is already completed
-function! zim#editor#CreateHeader()
+function! zim#editor#CreateHeader(...)
     if (  getline(1) =~ "Content-Type: text/x-zim-wiki"
           \ && getline(2) =~ "Wiki-Format:" )
       echomsg zim#util#gettext("Zim Header already exists")

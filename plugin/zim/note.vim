@@ -2,8 +2,19 @@
 " @param string dir  Notebook dir
 " @param string name Path to the note
 function! zim#note#Create(whereopen,dir,name)
-  let l:note=a:dir.'/'.substitute(
-        \substitute(a:name,'\([ :\*]\)\+','_','g'),
+  if !len(a:name)
+    echomsg zim#util#gettext('note_out_of_notebook')
+    return
+  endif
+  let l:nsplit=split(a:name.'/','/')
+  let l:note_name=l:nsplit[-1]
+  let l:note_dir=join(l:nsplit[0:-2],'/')
+  if empty(l:note_name)
+    let l:note_name=input( zim#util#gettext('note_name').' ? ')
+  endif
+
+  let l:note=a:dir.'/'.l:note_dir.'/'.substitute(
+        \substitute(l:note_name,'\([ :\*]\)\+','_','g'),
         \'\(\.txt\)\?$','.txt','g')
   if l:note !~ g:zim_notebooks_dir.'/.*/.*.txt'
     echomsg zim#util#gettext('note_out_of_notebook')
