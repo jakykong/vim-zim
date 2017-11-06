@@ -240,7 +240,7 @@ function! s:getAllLinkComponentsInStr(str,begin,end,sep,idx)
     if (l:b>=0)
       let l:bmatch=matchstr(a:str, a:begin, l:e)
       let l:e=match(a:str, a:end, l:b+len(l:bmatch))
-      if (l:e>=0 )
+      if (l:e>=0)
         let l:b=l:b+len(l:bmatch)
         let l:tgt=strpart(a:str, l:b, l:e-l:b)
         call add(l:links,split(l:tgt,a:sep)[a:idx])
@@ -320,16 +320,16 @@ function! zim#editor#ShowFile(openners)
     let l:components[0]='https://'.l:components[0]
   else
     let l:components=s:getLinkComponentsUnderCursor('http://','\(\|$\| \|}\|\]\)','\(|\|?\)')
-  endif
-  if len(l:components)
-    " just add 's' to 'http' with an option to implement a kind of https everywhere
-    let l:components[0]='http://'.l:components[0]
-  else
-    let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)')
     if len(l:components)
-      let l:components[0]='/'.l:components[0]
+      " just add 's' to 'http' with an option to implement a kind of https everywhere
+      let l:components[0]='http://'.l:components[0]
     else
-      return 0
+      let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)')
+      if len(l:components)
+        let l:components[0]='/'.l:components[0]
+      else
+        return 0
+      endif
     endif
   endif
   call s:showFiles([l:components[0]],a:openners)
