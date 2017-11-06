@@ -31,6 +31,11 @@ Here we go
 This version is a beta of what could be published by Jack Mudge
 on VimScript.org.
 
+|Version|Author|License             | Comment      |
+|:--:|:--------------------------------------------------|:------------|:-----------------------------------|
+|0   | [Jack Mudge](https://github.com/jakykong/vim-zim) |Public Domain| See : README for more informations |
+|1   | [Luffah](https://github.com/luffah/vim-zim)       |Public Domain| What i added is in the doc `:h Zim`|
+
 Current version : 1.1
 
 How to install
@@ -63,8 +68,12 @@ This section give some details about the development of this plugin.
 * On terminal version of Vim : the notebook explorer is not perfectly redrawed.
 
 ## Changelog
-#### 2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
+#### 2016-09-13 - Jack Mudge <jakykong@theanythingbox.com>
 * Initial commit and upload to Github. 
+* This Zim plugin provides the following additions to Vim for use with Zim wiki files:
+    * Syntax highlighting and filetype detection for Zim files
+    * Commands to bold, italicize, strike, or mark text.
+    * A command to add a header to new Zim files.
 
 #### 2017-06-13 - Luffah <luffah@runbox.com>
 * v1 : Provide customisation, helpfile, and navigation features
@@ -77,44 +86,7 @@ This section give some details about the development of this plugin.
 * Multilingual : English, French // translations can be added in file plugin/zim.vim
 * You can now Search and jump to another note
 
-#### 2017-07-18 - Luffah <luffah@runbox.com>
+#### 2017-07-18 - Luffah
 * Allow to open files listed in a note with an external editor
 * Add some tricks in help
 
-## Versions details
-#### Version 0
-```
-Author: Jack Mudge <jakykong@theanythingbox.com>
-URL: https://github.com/jakykong/vim-zim
-Version: 0.1
-License: Public Domain
-
-This Zim plugin provides the following additions to Vim for use with Zim wiki files:
-* Syntax highlighting and filetype detection for Zim files
-* Commands to bold, italicize, strike, or mark text.
-* A command to add a header to new Zim files.
-
-A typical workflow for use with this is one of:
-* Create files in Zim, and use Tools->Edit Source to access Vim.
-* Create files in Vim, and (re)start Zim to read them.
-
-Commands:
-<Leader>wh - Header (accepts count 1-5): ====HEADER==== syntax in file (Normal mode)
-<Leader>wh - Highlight __Highlighted Text__ syntax (Visual mode)
-<Leader>wb - Bold text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-<Leader>wi - Italic text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-<Leader>ws - Strike text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-:CreateZimHeader() - Creates a Zim header in the current document. Required for Zim to correctly render new files.
-```
-See : https://github.com/jakykong/vim-zim/README for more information
-
-#### Version 1
-```
-Author: Luffah
-URL: https://github.com/luffah/vim-zim
-Version: 1.0
-License: Public Domain
-
-What i added is in the doc.
-:h Zim
-```
