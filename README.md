@@ -86,7 +86,7 @@ This section give some details about the development of this plugin.
 * Multilingual : English, French // translations can be added in file plugin/zim.vim
 * You can now Search and jump to another note
 
-#### 2017-07-18 - Luffah
+#### 2017-07-18 - Luffah <luffah@runbox.com>
 * Allow to open files listed in a note with an external editor
 * Add some tricks in help
 
