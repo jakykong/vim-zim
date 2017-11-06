@@ -202,10 +202,15 @@ function! s:getLinkPath(tgt)
     if match(a:tgt,'^\(href=\)')> -1
       return strpart(a:tgt,5)
     endif
-    let l:tgt=substitute(
-          \ substitute(a:tgt,':','/','g'),
-          \ ' ','_','g').'.txt'
     let l:notebook=expand('%:p:s?'.g:zim_notebooks_dir.'[/]*??:s?/.*$??')
+    let l:inner_path=expand('%:p:s?'.g:zim_notebooks_dir.'[/]*??:s?^[^/]*[/]*??:s?.txt$?/?')
+    let l:tgt=substitute(
+          \ substitute(
+          \ substitute(
+          \ substitute(a:tgt,':','/','g'),
+          \ ' ','_','g'),
+          \ '\.txt$','','').'.txt',
+          \ '^\./', l:inner_path,'')
     let l:tgt=g:zim_notebooks_dir.'/'.l:notebook.'/'.l:tgt
   endif
   return l:tgt
