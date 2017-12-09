@@ -60,7 +60,8 @@ function! zim#explorer#interactiveRename()
   call zim#explorer#getLine()
   if len(b:current_id)
       let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
-      let l:note_name=input( zim#util#gettext('note_name').' ? ')
+      let l:note_name=zim#note#getFilenameFromName(
+            \input( zim#util#gettext('note_name').' ? ') )
       call zim#note#Move(0,b:current_id,l:tgt.'/'.l:note_name) 
   endif
   silent call zim#explorer#ListUpdate()
@@ -125,24 +126,24 @@ function! zim#explorer#getNotesList(dir,filter,detect_doubles)
   let l:ret=[]
   for l:i in split(globpath(a:dir,'*'),"\n")
       if isdirectory(l:i)
-        if !(empty(b:moving_id))
-          call add(l:ret, substitute(substitute(l:i,g:zim_notebook.'/*','','')
-                \, '/', ' : ', 'g'))
-          let b:line_count+=1
-        endif
+"        if !(empty(b:moving_id))
+"          call add(l:ret, substitute(substitute(l:i,g:zim_notebook.'/*','','')
+"                \, '/', ' : ', 'g'))
+"          let b:line_count+=1
+"        endif
         call extend(l:ret ,zim#explorer#getNotesList(l:i,a:filter,0))
       else
         let l:i=substitute(l:i,g:zim_notebook.'/*','','')
         if b:current_id == l:i
-          if b:moving_id == l:i
-            let l:i.=' | MOVING '
-          endif
           let b:selected_idx_in_list=b:line_count
         endif
-        if l:i =~ a:filter
+        if b:moving_id == l:i
+          call add(l:ret, substitute(l:i.' | MOVING ', '/', ' : ', 'g'))
+          let b:line_count+=1
+        elseif  l:i =~ a:filter
           call add(l:ret, substitute(l:i, '/', ' : ', 'g'))
+          let b:line_count+=1
         endif
-        let b:line_count+=1
       endif
   endfor
   if a:detect_doubles

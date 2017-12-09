@@ -122,21 +122,22 @@ endfu
 " @param string bstyle The opening element
 " @param string estyle The ending element
 " @param int    lnum   Line number
-function! s:doZimToggleStyle(bstyle,estyle,lnum)
+function! s:doZimToggleStyle(bstyle,estyle,lnum,beginpos)
   let l:l=getline(a:lnum)
   let l:bstyle=substitute(a:bstyle,'[*~/]','\\\0','g')
   let l:estyle=substitute(a:estyle,'[*~/]','\\\0','g')
-  if match(l:l,l:bstyle.'.*'.l:estyle)>-1
-    call setline(a:lnum,substitute(l:l,l:bstyle.'\(.*\)'.l:estyle,'\1',''))
+  let l:end=match(l:l,'\%(\s\s\+\|\s*$\)',a:beginpos-1)
+  let l:begin=match(l:l,l:bstyle.'.*'.l:estyle,a:beginpos-1-len(a:bstyle))
+  if l:begin>-1 && l:begin < l:end
+    let l:end=match(l:l,l:estyle,l:begin+len(a:bstyle))
+    let l:l=strpart(l:l, 0, l:begin).
+          \ strpart(l:l, l:begin+len(a:bstyle), l:end - l:begin - len(a:bstyle)).
+          \ strpart(l:l, l:end+len(a:estyle))
+     call setline(a:lnum, l:l)
   else
-    let l:begin=match(l:l,'\]')
+    let l:begin=match(l:l,'[0-9A-Za-z_éèêëàâäàôöóòíìïîüûúù]',a:beginpos-1)
     if l:begin>-1
-      let l:begin=match(l:l,'\w',l:begin)
-    else
-      let l:begin=match(l:l,'\w')
-    endif
-    if l:begin>-1
-      let l:end=match(l:l,'\s*$')
+      let l:end=match(l:l,'\%(\s\s\+\|\s*$\)',l:begin)
       call s:doZimSetStyle(a:bstyle, a:estyle , l:begin, l:end, a:lnum)
     endif
   endif
@@ -145,8 +146,10 @@ endfu
 "" Tooggle style on the current line
 " @param string style The opening & ending element (used for bold, italic...)
 function! zim#editor#ToggleStyle(style)
-  call s:doZimToggleStyle(a:style,a:style,line('.'))
+  call s:doZimToggleStyle(a:style,a:style,line('.'),col('.'))
 endfu
+
+
 
 "" Tooggle style on the selected words
 "" if selection is on 1 line toggle from cursor start to end,
@@ -177,7 +180,7 @@ function! zim#editor#ToggleStyleBlock(style)
     call setpos('.',[0,l:l1,l:c2,0])
   else
     for l:i in getline(l:l1,l:l2)
-      call s:doZimToggleStyle(a:style,a:style,line('.'))
+      call s:doZimToggleStyle(a:style,a:style,line('.'),1)
     endfor
   endif
 endfu

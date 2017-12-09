@@ -1,3 +1,10 @@
+function! zim#note#getFilenameFromName(name)
+  let l:fname=substitute(a:name,'\([ !?:\*]\)\+','_','g')
+  let l:fname=substitute(l:fname,"'",'_','g')
+  let l:fname=substitute(l:fname,'\(\.txt\)\?$','.txt','g')
+  return l:fname
+endfu
+
 "" Create Zim Note in a buffer, i.e., for a new file
 " @param string dir  Notebook dir
 " @param string name Path to the note
@@ -13,9 +20,7 @@ function! zim#note#Create(whereopen,dir,name)
     let l:note_name=input( zim#util#gettext('note_name').' ? ')
   endif
 
-  let l:note=a:dir.'/'.l:note_dir.'/'.substitute(
-        \substitute(l:note_name,'\([ :\*]\)\+','_','g'),
-        \'\(\.txt\)\?$','.txt','g')
+  let l:note=a:dir.'/'.l:note_dir.'/'.zim#note#getFilenameFromName(l:note_name)
   if l:note !~ g:zim_notebooks_dir.'/.*/.*.txt'
     echomsg zim#util#gettext('note_out_of_notebook')
   else

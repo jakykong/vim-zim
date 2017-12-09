@@ -200,19 +200,19 @@ let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<cr>'},
       \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<cr>'},
       \ 'bold':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR>',
+      \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR><Esc>',
       \   'n': ':call zim#editor#ToggleStyle("**")<CR>'
       \ },
       \  'highlight':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("__")<CR>',
+      \   'v': ':call zim#editor#ToggleStyleBlock("__")<CR><Esc>',
       \   'n': ':call zim#editor#ToggleStyle("__")<CR>'
       \ },
       \ 'strike': {
-      \   'v':  ':call zim#editor#ToggleStyleBlock("~~")<CR>',
+      \   'v':  ':call zim#editor#ToggleStyleBlock("~~")<CR><Esc>',
       \   'n':  ':call zim#editor#ToggleStyle("~~")<CR>'
       \ },
       \ 'italic': {
-      \   'v' : ':call zim#editor#ToggleStyleBlock("//")<CR>',
+      \   'v' : ':call zim#editor#ToggleStyleBlock("//")<CR><Esc>',
       \   'n' : ':call zim#editor#ToggleStyle("//")<CR>'
       \ }
       \})
