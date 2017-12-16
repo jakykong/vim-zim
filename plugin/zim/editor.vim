@@ -37,20 +37,57 @@ endfunction
 "" Make a title with the current line
 function! zim#editor#Title()
   let l:i=line('.')
-  echomsg zim#util#gettext("title_level")." ? "
-  let l:lvl=nr2char(getchar())
+  let l:l=getline(l:i)
+  let l:rec=0 " 0 -> nothing ; 1 -> do update and rec; 2 -> only do update
+  if l:l =~ '^\s*\(=\)\+ '
+    let l:pos=match(l:l,'=')
+    let l:end=match(l:l,' ',l:pos)
+    let l:lvl=7-(l:end-l:pos)
+  else
+    let l:lvl=1
+  endif
+  
+  let l:anystyle_before='^\s*\(===*\)\?\(\*\*\?\)\?\(\[.\]\)\?\s*'
+  let l:anystyle_after='\s*\(===*\)\?\(\*\*\)\?\s*$'
+  let l:l=substitute(l:l, l:anystyle_before,'','') 
+  let l:l=substitute(l:l, l:anystyle_after,'','')
+  let l:titlemark=repeat("=",(7-l:lvl))
+  let l:l=l:titlemark.' '.l:l.' '.l:titlemark
+  call setline(l:i,l:l)
   redraw
-  if exists('l:lvl') 
-    let l:l=getline(l:i)
-    let l:anystyle_before='^\s*\(===*\)\?\(\*\*\?\)\?\(\[.\]\)\?\s*'
-    let l:anystyle_after='\s*\(===*\)\?\(\*\*\)\?\s*$'
+  echomsg zim#util#gettext("title_level")." ? "
+  let l:chr=getchar()
+  redraw
+  if l:chr == "\<Right>" 
+    let l:lvl=min([5,1+l:lvl])
+    let l:rec=1
+  elseif l:chr == "\<Left>" 
+    let l:lvl=max([1,l:lvl-1])
+    let l:rec=1
+  elseif l:chr == "\<Up>"
+    norm O
+  elseif l:chr == "\<Down>"
+    norm o
+  else
+    let l:lvl=nr2char(l:chr)
+    if l:lvl == 't' || l:chr == "\<Backspace>"
+      let l:l=substitute(l:l, l:anystyle_before,'','') 
+      let l:l=substitute(l:l, l:anystyle_after,'','')
+      call setline(l:i,l:l)
+    else
+      let l:rec=2
+    endif
+  endif
+  if (l:lvl =~ '\d') && l:rec
     let l:l=substitute(l:l, l:anystyle_before,'','') 
     let l:l=substitute(l:l, l:anystyle_after,'','')
-    if l:lvl =~ '\d'
-      let l:titlemark=repeat("=",(7-l:lvl))
-      let l:l=l:titlemark.' '.l:l.' '.l:titlemark
-    endif
+    let l:titlemark=repeat("=",(7-l:lvl))
+    let l:l=l:titlemark.' '.l:l.' '.l:titlemark
     call setline(l:i,l:l)
+    redraw
+  endif
+  if l:rec == 1
+    call zim#editor#Title()
   endif
 endfu
 
@@ -59,6 +96,21 @@ endfu
 function! zim#editor#Bullet(bul)
   call setline('.',
         \ substitute(getline('.'),'^\(\s*\)\(\[.\]\)\?\(*\)\?\s*','\1'.a:bul.' ',''))
+endfu
+
+function! zim#editor#BulletBulk(bul)
+  norm gv
+  let [ l:l1, l:l2]=[line('.'), line('v')]
+  let [ l:l1, l:l2 ] = l:l1>l:l2 ? [l:l2,l:l1] : [l:l1,l:l2]
+  let l:i=l:l1
+  for l:l in getline(l:l1,l:l2)
+    call setline(l:i,
+          \ substitute(l:l,'^\(\s*\)\(\[.\]\)\?\(*\)\?\s*','\1'.a:bul.' ',''))
+    let l:i+=1
+  endfor
+  exe ':'.l:l1
+  exe 'norm '.(l:l2-l:l1).'V'
+  norm gv
 endfu
 
 "" Get the bullet (list, numbered list, checkbox) for the next line
@@ -72,8 +124,8 @@ function! zim#editor#NextBullet(l)
     let l:ret=strpart(l:l,0,l:pos)
     let l:l=strpart(l:l,l:pos)
     if l:pos > -1
-      if l:l =~ '\d\.'
-        let l:ret.=substitute(l:l,'\(\d\)\(.\D\)','\=(submatch(1)+1).submatch(2)','')
+      if l:l =~ '\d\+\.'
+        let l:ret.=substitute(l:l,'\(\d\+\)\(.\D\)','\=(submatch(1)+1).submatch(2)','')
       else
         let l:ret.=l:l
       endif
@@ -91,7 +143,7 @@ function! zim#editor#CR(cr)
   let l:pos=col('.')
   let l:l=getline('.')
   if a:cr
-    let pos=match(l:l,a:cr,l:pos-2)
+    let l:pos=match(l:l,a:cr,l:pos-2)
   endif
   let l:b=strpart(l:l, 0, l:pos-1)
   let l:e=substitute(strpart(l:l, l:pos),'\s*$','','')
@@ -99,7 +151,11 @@ function! zim#editor#CR(cr)
   if len(l:e)
     put=l:e
   else
-    put=zim#editor#NextBullet(l:b).' '
+    if l:b =~ '='
+      put=' '
+    else
+      put=zim#editor#NextBullet(l:b).' '
+    endif
     normal $
   endif
 endfu
@@ -122,11 +178,11 @@ endfu
 " @param string bstyle The opening element
 " @param string estyle The ending element
 " @param int    lnum   Line number
-function! s:doZimToggleStyle(bstyle,estyle,lnum,beginpos)
-  let l:l=getline(a:lnum)
+function! s:doZimToggleStyle(bstyle,estyle,lnum,lcontent,beginpos)
+  let l:l=a:lcontent
   let l:bstyle=substitute(a:bstyle,'[*~/]','\\\0','g')
   let l:estyle=substitute(a:estyle,'[*~/]','\\\0','g')
-  let l:end=match(l:l,'\%(\s\s\+\|\s*$\)',a:beginpos-1)
+  let l:end=match(l:l,'\%(\s\s\+\|[;,.)}>]\|\]\|\s*$\)',a:beginpos-1)
   let l:begin=match(l:l,l:bstyle.'.*'.l:estyle,a:beginpos-1-len(a:bstyle))
   if l:begin>-1 && l:begin < l:end
     let l:end=match(l:l,l:estyle,l:begin+len(a:bstyle))
@@ -137,7 +193,7 @@ function! s:doZimToggleStyle(bstyle,estyle,lnum,beginpos)
   else
     let l:begin=match(l:l,'[0-9A-Za-z_éèêëàâäàôöóòíìïîüûúù]',a:beginpos-1)
     if l:begin>-1
-      let l:end=match(l:l,'\%(\s\s\+\|\s*$\)',l:begin)
+      let l:end=match(l:l,'\%(\s\s\+\|[;,.)}>]\|\]\|\s*$\)',l:begin)
       call s:doZimSetStyle(a:bstyle, a:estyle , l:begin, l:end, a:lnum)
     endif
   endif
@@ -146,10 +202,23 @@ endfu
 "" Tooggle style on the current line
 " @param string style The opening & ending element (used for bold, italic...)
 function! zim#editor#ToggleStyle(style)
-  call s:doZimToggleStyle(a:style,a:style,line('.'),col('.'))
+  let l:col=col('.')
+  let l:i=line('.')
+  let l:l=getline(l:i)
+  if l:l[l:col-1]==' ' && index([' ','(',')','<','>','[',']','{','}','.',',',';'],l:l[l:col-2])
+        \ && l:l[l:col] !~ '[^[:punct:]]'
+"        \ && l:l[l:col] !~ '[^();,.{}]\|\[\]'
+    exe 'norm a'.a:style.' '.a:style
+    exe 'norm F xi'.input(zim#util#gettext('input_text').' : ')
+    exe 'norm '.len(a:style).' '
+    return 1
+  endif
+  let l:mark=' '
+  while l:col >1 && l:l[l:col-1] != l:mark
+    let l:col-=1
+  endwhile
+  call s:doZimToggleStyle(a:style,a:style,l:i,l:l,l:col)
 endfu
-
-
 
 "" Tooggle style on the selected words
 "" if selection is on 1 line toggle from cursor start to end,
@@ -179,8 +248,10 @@ function! zim#editor#ToggleStyleBlock(style)
     norm o
     call setpos('.',[0,l:l1,l:c2,0])
   else
-    for l:i in getline(l:l1,l:l2)
-      call s:doZimToggleStyle(a:style,a:style,line('.'),1)
+    let l:i=line('.')
+    for l:l in getline(l:l1,l:l2)
+      call s:doZimToggleStyle(a:style,a:style,l:i,l:l,1)
+      let l:i+=1
     endfor
   endif
 endfu
