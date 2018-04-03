@@ -68,12 +68,21 @@ function! zim#explorer#interactiveRename()
 endfunction
 
 function! zim#explorer#interactiveNewNote(whereopen)
+  let l:curwin=win_getid()
   call zim#explorer#getLine()
   if len(b:current_id)
-      let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
-      let l:note_name=input( zim#util#gettext('note_name').' ? ')
+      let l:tgt=substitute(b:current_id,'\.\(txt\|zim\)$','','')
+      let l:tgttab=split(l:tgt, '/')
+      let l:sug=l:tgttab[-1]
+      let l:tgt=join(l:tgttab[0:-2],'/')
+      " let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
+      let l:note_name=input( zim#util#gettext('note_name').' ? ',l:sug, 'customlist,zim#util#_CompleteNotes' )
       call zim#note#Create(a:whereopen,g:zim_notebook,l:tgt.'/'.l:note_name) 
+      let l:newwin=win_getid()
   endif
+  call win_gotoid(l:curwin)
+  call zim#explorer#ListUpdate()
+  call win_gotoid(l:newwin)
 endfunction
 
 function! zim#explorer#List(whereopen,dir,...)
@@ -95,7 +104,7 @@ function! zim#explorer#List(whereopen,dir,...)
   nnoremap <buffer> m    :call zim#explorer#interactiveMove()<cr>
   nnoremap <buffer> N    :call zim#explorer#interactiveNewNote('rightbelow vertical split')<cr>
   nnoremap <buffer> R    :call zim#explorer#interactiveRename()<cr>
-  nnoremap <buffer> D    :exe '!rm -i '.zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
+  nnoremap <buffer> D    :if(input(zim#util#gettext('Delete note').'[Y/n]') !~ "^[Nn]") <bar> call system('rm '.zim#explorer#getLine()) <bar> endif <bar> call zim#explorer#ListUpdate()<cr>
   exe "nnoremap <buffer> f    :silent call zim#explorer#getLine()<bar>let b:filter=input('".zim#util#gettext('Change filter :')."') <bar> call zim#explorer#ListUpdate()<cr>"
   nnoremap <buffer> q :q<cr>
   call zim#explorer#ListUpdate()
