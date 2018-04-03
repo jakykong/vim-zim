@@ -16,11 +16,16 @@ elseif exists("b:current_syntax")
   finish
 endif
 
-syn case ignore
+"syn case ignore
 
 " Zim Header
-syn match zimHeader /^\(Content-Type\|Wiki-Format\|Creation-Date\):\(.*\)\@=/ contained
-syn region zimHeaderRegion start="^\(Content-Type\|Wiki-Format\|Creation-Date\):\%1l" end="^\([^CWM].*\|\)$" contains=zimHeader keepend
+syn match zimHeader /^\(Content-Type\|Wiki-Format\|Creation-Date\):\(.*\)\@=\c/ contained
+syn region zimHeaderRegion
+      \ start=/^\(Content-Type\|Wiki-Format\|Creation-Date\):\%1l\c/
+      \ end=/^\([^CW].*\|\)$\c/
+      \ contains=zimHeader
+      \ transparent fold
+      \ keepend extend
 highlight link zimHeader LineNr
 
 " Titles (h1 to h5)
@@ -77,6 +82,33 @@ hi def link zimwikiSup	Number
 " Style : image
 syn match zimwikiImage '{{.\{-1,}}}'
 hi def link zimwikiImage Float
+
+" Line
+syn match zimHorizontalLine /^\(-\{20}\)$/
+hi link zimHorizontalLine Underlined
+
+
+" Code Block
+highlight link zimHeader LineNr
+
+
+fu! s:activate_codeblock()
+  " generate by :read!%:p:h/getsourcesfiletype.py
+  let l:languages = {"java" : "java","dtd" : "dtd","lua" : "lua",".desktop" : "desktop","gtkrc" : "gtkrc","r" : "r","html" : "html","m4" : "m4","javascript" : "javascript","xml" : "xml","ruby" : "ruby","c" : "c","xslt" : "xslt","c++" : "cpp","sh" : "sh",".ini" : "dosini","awk" : "awk","perl" : "perl","css" : "css","cmake" : "cmake","diff" : "diff","changelog" : "changelog","gettext-translation" : "po","python" : "python","sql" : "sql","php" : "php"}
+
+  for l:i in keys(l:languages)
+    let l:l = l:languages[l:i]
+    let b:current_syntax=''
+    unlet b:current_syntax
+    exe 'syn include @zimcodeblock'.l:l.' syntax/'.l:l.'.vim contained'
+    exe 'syn region zimCodeBlock'.l:l.' start=|lang="'.l:i.'".*$|ms=e+1'.
+          \' end=|^}}}|me=e-3 contained contains=@zimcodeblock'.l:l
+  endfor
+  syn region zimCodeBlock
+        \ start="^{{{code: " end="^}}}"
+        \ transparent keepend contains=@NoSpell,ZimCodeBlock.*
+endfu
+call s:activate_codeblock()
 
 
 let b:current_syntax = "zim"
