@@ -212,7 +212,9 @@ function! s:setBufferSpecific()
   for l:k in keys(g:zim_edit_actions)
     if has_key(g:zim_keymapping,l:k)
       for l:m in keys(g:zim_edit_actions[l:k])
-        exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
+          if len(g:zim_keymapping[l:k])
+            exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
+          endif
       endfor
     endif
   endfor

@@ -59,7 +59,7 @@
 " Example configuration :
 " set rtp+=/path/to/zim.vim
 " let g:zim_keymapping={
-"       \ '<cr>':'<CR>',
+"       \ '<CR>':'<CR>',
 "       \ 'continue_list':'<Leader><CR>',
 "       \ 'jump':'<Leader>g',
 "       \ 'jump_back':'<Leader>G',
@@ -99,6 +99,8 @@ command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimMove :call zim
 command! -nargs=1 -complete=customlist,zim#util#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
 command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 
+command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdI ZimCmd :call zim#util#cmd('n',<q-args>,1)
+command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdV -range ZimCmdV :call zim#util#cmd('v',<q-args>,1)
 
 " The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
 let g:zim_matchable=get(g:,'zim_matchable',{
@@ -169,11 +171,11 @@ let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
 "
 "" Actions
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
-      \ '<cr>':{ 'i' : '<bar><Esc>:call zim#editor#CR("<bar>")<Cr>i' },
-      \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<Cr>' },
-      \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<Cr>' },
-      \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <Cr>' },
-      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<Cr>$a' },
+      \ '<CR>':{ 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
+      \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<CR>' },
+      \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<CR>' },
+      \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <CR>' },
+      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<CR>$a' },
       \ 'title': { 'n':  ':call zim#editor#Title()<CR>' },
       \ 'header':       { 'n':  ':call zim#editor#CreateHeader()<CR>' },
       \ 'showimg':       {
@@ -192,20 +194,20 @@ let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \    'v':  ':call zim#editor#ShowFileBulk(g:zim_ext_editor)<CR>',
       \    'n':  ':call zim#editor#ShowFile(g:zim_ext_editor)<CR>'
       \},
-      \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<cr>' },
-      \ 'li':           { 'n': ":call zim#editor#Bullet('*')<cr>", 'v':":call zim#editor#BulletBulk('*')<cr>" },
-      \ 'checkbox':     { 'n': ":call zim#editor#Bullet('[ ]')<cr>", 'v':":call zim#editor#BulletBulk('[ ]')<cr>"},
-      \ 'checkbox_yes': { 'n': ":call zim#editor#Bullet('[*]')<cr>", 'v':":call zim#editor#BulletBulk('[*]')<cr>"},
-      \ 'checkbox_no':  { 'n': ":call zim#editor#Bullet('[x]')<cr>", 'v':":call zim#editor#BulletBulk('[x]')<cr>"},
-      \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<cr>'},
-      \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<cr>'},
+      \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<CR>' },
+      \ 'li':           { 'n': ":call zim#editor#Bullet('*')<CR>", 'v':":call zim#editor#BulletBulk('*')<CR>" },
+      \ 'checkbox':     { 'n': ":call zim#editor#Bullet('[ ]')<CR>", 'v':":call zim#editor#BulletBulk('[ ]')<CR>"},
+      \ 'checkbox_yes': { 'n': ":call zim#editor#Bullet('[*]')<CR>", 'v':":call zim#editor#BulletBulk('[*]')<CR>"},
+      \ 'checkbox_no':  { 'n': ":call zim#editor#Bullet('[x]')<CR>", 'v':":call zim#editor#BulletBulk('[x]')<CR>"},
+      \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<CR>'},
+      \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<CR>'},
       \ 'bold':{
       \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR><Esc>',
       \   'n': ':call zim#editor#ToggleStyle("**")<CR>'
       \ },
       \  'highlight':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("__")<CR><Esc>',
-      \   'n': ':call zim#editor#ToggleStyle("__")<CR>'
+      \   'v': ':silent call zim#editor#ToggleStyleBlock("__")<CR><Esc>',
+      \   'n': ':silent call zim#editor#ToggleStyle("__")<CR>'
       \ },
       \ 'strike': {
       \   'v':  ':call zim#editor#ToggleStyleBlock("~~")<CR><Esc>',
@@ -219,7 +221,7 @@ let g:zim_edit_actions=get(g:,'zim_edit_actions', {
 
 "" Default keymapping
 let g:zim_keymapping=get(g:,'zim_keymapping', {
-      \ '<cr>':'<CR>',
+      \ '<CR>':'<CR>',
       \ 'continue_list':'<Leader><CR>',
       \ 'jump':'<Leader>g',
       \ 'jump_back':'<Leader>G',
@@ -236,7 +238,7 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ 'checkbox_no':'<S-F12>',
       \ 'date':'<Leader>wd',
       \ 'datehour':'<Leader>wD',
-      \ 'explore':'F9',
+      \ 'explore':'<F9>',
       \ 'showimg':'<F3>',
       \ 'editimg':'<S-F3>',
       \ 'showfile':'<F4>',

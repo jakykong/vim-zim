@@ -189,12 +189,12 @@ function! s:doZimToggleStyle(bstyle,estyle,lnum,lcontent,beginpos)
     let l:l=strpart(l:l, 0, l:begin).
           \ strpart(l:l, l:begin+len(a:bstyle), l:end - l:begin - len(a:bstyle)).
           \ strpart(l:l, l:end+len(a:estyle))
-     call setline(a:lnum, l:l)
+     silent call setline(a:lnum, l:l)
   else
     let l:begin=match(l:l,'[0-9A-Za-z_éèêëàâäàôöóòíìïîüûúù]',a:beginpos-1)
     if l:begin>-1
       let l:end=match(l:l,'\%(\s\s\+\|[;,.)}>]\|\]\|\s*$\)',l:begin)
-      call s:doZimSetStyle(a:bstyle, a:estyle , l:begin, l:end, a:lnum)
+      silent call s:doZimSetStyle(a:bstyle, a:estyle , l:begin, l:end, a:lnum)
     endif
   endif
 endfu

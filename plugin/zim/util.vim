@@ -8,17 +8,44 @@ endfu
 
 "" Completion function for commands
 function! zim#util#_CompleteNotes(A,L,P)
-  let l:dir=substitute(g:zim_notebook,'[/]*$','/','g')
+  if a:A =~ '^/'
+    if a:A =~ '^'.g:zim_notebook
+      if mode() == 'c'
+        call feedkeys('e"'.substitute(a:L, g:zim_notebook.'/', '', '').'"')
+      endif
+      let l:a=substitute(a:A,'^'.g:zim_notebook.'/','','')
+    else
+      if mode() == 'c'
+        call feedkeys(repeat("\b",len(a:A)))
+      endif
+      let l:a=''
+    endif
+  else
+    let l:a=a:A
+  endif
+  let l:dir=substitute(g:zim_notebook,'[/]*$','/','')
   return map(
-        \globpath(l:dir, a:A.'*', 0, 1),
+        \globpath(l:dir, l:a.'*\c', 0, 1),
         \'strpart(v:val,len(l:dir)).(isdirectory(v:val)?"/":"")'
         \)
 endfunction
 
+function! zim#util#_CompleteEditCmdI(A,L,P)
+  let l:r=keys(filter(g:zim_edit_actions,'has_key(v:val,"n")'))
+
+  return len(a:A) ? filter(l:r, 'v:val =~ "'.a:A.'*\\c"') : l:r
+endfunction
+
+function! zim#util#_CompleteEditCmdV(A,L,P)
+  let l:r=keys(filter(g:zim_edit_actions,'has_key(v:val,"v")'))
+  return len(a:A) ? filter(l:r, 'v:val =~ "'.a:A.'*\\c"') : l:r
+endfunction
+
 function! zim#util#_CompleteBook(A,L,P)
-  let l:dir=substitute(g:zim_notebooks_dir,'[/]*$','/','g')
+  let l:a=substitute(a:A,'^'.g:zim_notebook,'','')
+  let l:dir=substitute(g:zim_notebooks_dir,'[/]*$','/','')
   return map(
-        \filter(globpath(l:dir, a:A.'*', 0, 1),'isdirectory(v:val)'),
+        \filter(globpath(l:dir, l:a.'*\c', 0, 1),'isdirectory(v:val)'),
         \'strpart(v:val,len(l:dir))."/"'
         \)
 endfunction
@@ -95,3 +122,26 @@ function! zim#util#move(src,tgt,copy,dir)
   endif
   exe printf(l:copy_cmd,a:src,a:tgt)
 endfunction
+
+fu! s:prefeed(a)
+  let l:ret=a:a
+  let l:pf={ 'cr':"\n",'esc':"\e",'bs':"\b",'tab':"\t" }
+  for l:i in keys(l:pf)
+     let l:ret=substitute(l:ret, '<'.l:i.'>', l:pf[l:i],'g')
+  endfor
+  return l:ret
+endfu
+
+fu! zim#util#cmd(mode,cmd,show)
+  if a:show && has_key(g:zim_keymapping, a:cmd)
+    echo g:zim_keymapping[a:cmd]
+    sleep 600ms
+  endif
+  if a:mode == 'n'
+    silent! call feedkeys(s:prefeed(g:zim_edit_actions[a:cmd]['n']))
+  elseif a:mode == 'v'
+    silent! call feedkeys('gv'.s:prefeed(g:zim_edit_actions[a:cmd]['v']))
+  elseif a:mode == 'i'
+    silent! call feedkeys("".s:prefeed(g:zim_edit_actions[a:cmd]['n']))
+  endif
+endfu
