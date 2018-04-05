@@ -1,21 +1,5 @@
 Zim Desktop Wiki plugin for Vim
 ================================
-This plugin allow to use all Zim notes in Vim.
-It is especially useful :
-
-* when you want to use Vim to edit your note
-* when you need to fetch informations stored in your NoteBooks
-
-Examples :
-
-* you want all notes mentioning 'foo' : just do `:ZimGrep foo`
-* you want all notes named 'something-foo' : do `:ZimList foo`
-* you want to create a new note : `:ZimNewNote Notes/foo/A Great Name For Bar` will create the files `foo.txt` titled `foo`, and `foo/A_Great_Name_For_Bar.txt` titled `A Great Name For Bar`
-* note that you can use <Tab> completion to get your path with `:ZimNewNote` and `:ZimList`
-* you need to organize the notes in the Notebook foo `:ZimList foo` and use d(detect double) D(delete) N(new note) m(move) R(Rename) keys
-
-Here we go
-================================
 ```
             ___    /   /                                              
            |_ _|  /  /         _________      _                       
@@ -28,23 +12,26 @@ Here we go
     |_ _|     _|_                                                     
              |_ _|      Zim -  A Desktop Wiki  (for Vim 7.0 or newer) 
 ```
-This version is a beta of what could be published by Jack Mudge
-on VimScript.org.
-
-|Version|Author|License             | Comment      |
-|:--:|:--------------------------------------------------|:------------|:-----------------------------------|
-|0   | [Jack Mudge](https://github.com/jakykong/vim-zim) |Public Domain| See : README for more informations |
-|1   | [Luffah](https://github.com/luffah/vim-zim)       |Public Domain| What i added is in the doc `:h Zim`|
-
-Current version : 1.1
 
 How to install
 ================================
-You can just add this in your vim rc:
+Download zip or do `git clone` using button 'Clone or download'.
+The shall be `~/vim/pack/org/start/zim` (or arbitrary `/path/to/vim-zim` with Vim version<8 ).
+
+Then add this in your vim rc.
+
+In Vim 8, you shall just verify this line present :
+```vim
+syntax on
+packloadall
 ```
+``` Vim
+
+If you use Vim version<8 :
+```vim
+syntax on
 set rtp+=/path/to/vim-zim
 ```
-
 Restart Vim.
 
 Do in command line :
@@ -52,9 +39,31 @@ Do in command line :
 * To get every commands and parameters ->  `:h Zim`
 * To get a list of your notes -> `:ZimList`
 
+
+Usage
+=====
+
+This plugin allow to use all Zim notes in Vim.
+It is especially useful :
+
+* when you want to use Vim to edit your note
+* when you need to fetch informations stored in your NoteBooks
+
+Use cases :
+* you want all notes mentioning 'foo' : just do `:ZimGrep foo`
+* you want all notes named 'something-foo' : do `:ZimList foo`
+* you want to create a new note : `:ZimNewNote Notes/foo/A Great Name For Bar` will create the files `foo.txt` titled `foo`, and `foo/A_Great_Name_For_Bar.txt` titled `A Great Name For Bar`
+* note that you can use <Tab> completion to get your path with `:ZimNewNote` and `:ZimList`
+* you need to organize the notes in the Notebook foo `:ZimList foo` and use d(detect double) D(delete) N(new note) m(move) R(Rename) keys
+* you need to format the current line as a title, and you don't know the keybind  `:ZimCmd title`
+
 About zim-vim
 =============
 This section give some details about the development of this plugin.
+
+Authors : [Jack Mudge](https://github.com/jakykong/vim-zim), [Luffah](https://github.com/luffah/vim-zim)
+```
+License : Public Domain
 
 ## Known issues  
 * Windows :Zim header command uses strftime, but due to working around Microsoft issues,
@@ -68,15 +77,15 @@ This section give some details about the development of this plugin.
 * On terminal version of Vim : the notebook explorer is not perfectly redrawed.
 
 ## Changelog
-#### 2016-09-13 - Jack Mudge <jakykong@theanythingbox.com>
+#### version 0.1 2016-09-13 - Jack Mudge <jakykong@theanythingbox.com>
 * Initial commit and upload to Github. 
 * This Zim plugin provides the following additions to Vim for use with Zim wiki files:
     * Syntax highlighting and filetype detection for Zim files
     * Commands to bold, italicize, strike, or mark text.
     * A command to add a header to new Zim files.
 
-#### 2017-06-13 - Luffah <luffah@runbox.com>
-* v1 : Provide customisation, helpfile, and navigation features
+#### version 1.0 2017-06-13 - Luffah <luffah@runbox.com>
+*  Provide customisation, helpfile, and navigation features
 * (change) Header accept user dialog instead of count
 * (change) Syntax color reviewed in order to look more like Zim
 * Mod. CreateZimHeader + minimal support of Linux strftime() + automatic title
@@ -86,7 +95,7 @@ This section give some details about the development of this plugin.
 * Multilingual : English, French // translations can be added in file plugin/zim.vim
 * You can now Search and jump to another note
 
-#### 2017-07-18 - Luffah <luffah@runbox.com>
+#### version 1.1 2017-07-18 - Luffah <luffah@runbox.com>
 * Allow to open files listed in a note with an external editor
 * Add some tricks in help
-
+```
