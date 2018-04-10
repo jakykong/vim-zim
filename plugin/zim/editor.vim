@@ -290,7 +290,8 @@ function! s:getLinkPath(tgt)
   return l:tgt
 endfunction
 
-function! s:getLinkComponentsUnderCursor(begin,end,sep)
+function! s:getLinkComponentsUnderCursor(begin,end,sep,...)
+  let l:keepstart=len(a:000)>0?a:000[0]:0
   let l:pos=col('.')
   let l:l=getline('.')
   let l:pat=a:begin.'.*'.a:end
@@ -305,7 +306,9 @@ function! s:getLinkComponentsUnderCursor(begin,end,sep)
   if (l:b < 0)
     return []
   endif
-  let l:b=l:b+len(l:bmatch)
+  if !l:keepstart
+    let l:b=l:b+len(l:bmatch)
+  endif
   let l:tgt=strpart(l:l, l:b, l:e-l:b)
   return split(l:tgt,a:sep)
 endfunction
@@ -375,9 +378,11 @@ function! s:showFiles(imgs, openners)
       endfor
     endif
   endfor
+  echo l:opens
   for l:i in keys(l:opens)
     "    silent exe '!'.l:opens[i].'&'
-    exe '!'.l:opens[i].' &'
+    echo "!".l:opens[i]
+    call system(l:opens[i].' &')
   endfor
 endfunction
 
@@ -388,27 +393,19 @@ function! zim#editor#InsertImage(imgfname,captureprg)
   endif
   if (len(a:captureprg))
     "    silent! exe '!'.a:captureprg.' '.l:imgfname.'&'
-    exe '!'.a:captureprg.' '.l:imgfname
+    call system(a:captureprg.' '.l:imgfname)
   endif
   exe 'norm i{{'.l:imgfname.'?href=#}}'
 endfunction
 
 function! zim#editor#ShowFile(openners)
-  let l:components=s:getLinkComponentsUnderCursor('https://','\(\|$\| \|}\|\]\)','\(|\|?\)')
-  if len(l:components)
-    let l:components[0]='https://'.l:components[0]
-  else
-    let l:components=s:getLinkComponentsUnderCursor('http://','\(\|$\| \|}\|\]\)','\(|\|?\)')
+  let l:components=s:getLinkComponentsUnderCursor('\(https://\|http://\|\~/\)','\(\|$\| \|}\|\]\)','\(|\|?\)',1)
+  if !len(l:components)
+    let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\|\)/','\(\\\|$\| \|}\|?\|\]\)','\(|\|?\)')
     if len(l:components)
-      " just add 's' to 'http' with an option to implement a kind of https everywhere
-      let l:components[0]='http://'.l:components[0]
+      let l:components[0]='/'.l:components[0]
     else
-      let l:components=s:getLinkComponentsUnderCursor('\(^\|{\|\[\)/','\(\|$\| \|}\|?\|\]\)','\(|\|?\)')
-      if len(l:components)
-        let l:components[0]='/'.l:components[0]
-      else
-        return 0
-      endif
+      return 0
     endif
   endif
   call s:showFiles([l:components[0]],a:openners)
