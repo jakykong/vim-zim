@@ -1,8 +1,19 @@
 
 "" Get the translation of string
 function! zim#util#gettext(k)
-  return  get(get(g:zim_wiki_prompt, g:zim_wiki_lang, g:zim_wiki_prompt['en']),
-        \  a:k, a:k )
+  " let l:lang_prompt=get(g:zim_wiki_prompt, g:zim_wiki_lang, g:zim_wiki_prompt['en'])
+  if has_key(g:zim_wiki_prompt,g:zim_wiki_lang)
+    if has_key(g:zim_wiki_prompt[g:zim_wiki_lang],a:k)
+       let l:ret = g:zim_wiki_prompt[g:zim_wiki_lang][a:k]
+    elseif has_key(g:zim_wiki_prompt['en'],a:k)
+       let l:ret = g:zim_wiki_prompt['en'][a:k]
+    else
+       let l:ret = a:k
+    endif
+  else
+    let l:ret=get(g:zim_wiki_prompt['en'],a:k,a:k)
+  endif
+  return l:ret
 endfu
 
 
@@ -30,10 +41,78 @@ function! zim#util#_CompleteNotes(A,L,P)
         \)
 endfunction
 
+" # s:CloseLayerPrint() -> a short string to indicate the current layer
+let s:compl_help_bufnr=0
+let s:compl_related=0
+fu! s:CloseCompletionHelp()
+  if !empty(s:compl_help_bufnr)
+    if s:is_compl_help_update
+      " let s:is_compl_help_update=0
+    else
+      let l:winnr=bufwinnr(s:compl_help_bufnr)
+      if l:winnr > 0
+        exe l:winnr.'windo bd'
+        let s:compl_help_bufnr=0
+        redraw
+      endif
+    endif
+  endif
+endfu
+
+
+" Layer Description
+fu! s:CompletionHelp(lines)
+  let s:is_compl_help_update=1
+  if !empty(a:lines)
+    if s:compl_help_bufnr 
+      let l:winnr=bufwinnr(s:compl_help_bufnr)
+      if l:winnr > 0
+        exe l:winnr.'wincmd w'
+        exe '%delete'
+      endif
+    else
+      let s:compl_related=bufnr('%')
+      au CmdwinLeave,BufEnter,CursorMoved <buffer> call s:CloseCompletionHelp()
+      rightbelow split
+      enew
+      " redraw
+      let s:compl_help_bufnr=bufnr('%')
+      set buftype=nofile
+      setlocal nowrap
+      set ft=zimindex
+      au BufEnter <buffer> call s:CloseCompletionHelp()
+    endif
+    let l:w=winwidth('%')
+    let l:lines=[]
+    let l:nline=printf("%-50s",a:lines[0])
+    for l:i in a:lines[1:]
+      if (len(l:nline . l:i) + 4) > l:w
+        call add(l:lines,l:nline)
+        let l:nline = printf("%-50s",l:i)
+      else
+        let l:nline.= '||' . printf("%-50s",l:i)
+      endif
+    endfor
+    call add(l:lines,l:nline)
+    if s:is_compl_help_update
+      exe 'resize '.len(l:lines)
+      call setline(1,l:lines)
+      exe winbufnr(s:compl_related).'wincmd w'
+    endif
+  endif
+  redrawstatus
+  let s:is_compl_help_update=0
+endfu
+
 function! zim#util#_CompleteEditCmdI(A,L,P)
   let l:r=keys(filter(g:zim_edit_actions,'has_key(v:val,"n")'))
-
-  return len(a:A) ? filter(l:r, 'v:val =~ "'.a:A.'*\\c"') : l:r
+  let l:ret = sort((len(a:A) ? filter(l:r, 'v:val =~ "'.a:A.'.*\\c"') : l:r))
+  if len(l:ret) == 1
+    call s:CloseCompletionHelp()
+  else
+    silent! call s:CompletionHelp(map(copy(l:ret),'v:val." -> ".zim#util#gettext("?".v:val)'))
+  endif
+  return l:ret
 endfunction
 
 function! zim#util#_CompleteEditCmdV(A,L,P)

@@ -381,8 +381,7 @@ function! s:showFiles(imgs, openners)
   echo l:opens
   for l:i in keys(l:opens)
     "    silent exe '!'.l:opens[i].'&'
-    echo "!".l:opens[i]
-    call system(l:opens[i].' &')
+    silent! call system(l:opens[i].' &')
   endfor
 endfunction
 

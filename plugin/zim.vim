@@ -101,6 +101,7 @@ command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdI ZimCmd :call zim#util#cmd('n',<q-args>,1)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdV -range ZimCmdV :call zim#util#cmd('v',<q-args>,1)
+command! ZimServer :call system('zim --server --gui '.g:zim_notebook .' '.get(g:,'zim_server_options','').' &')
 
 " The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
 let g:zim_matchable=get(g:,'zim_matchable',{
@@ -171,7 +172,7 @@ let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
 "
 "" Actions
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
-      \ '<CR>':{ 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
+      \ '<CR>': { 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
       \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<CR>' },
       \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<CR>' },
       \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <CR>' },
@@ -245,6 +246,31 @@ let g:zim_keymapping=get(g:,'zim_keymapping', {
       \ 'editfile':'<S-F4>',
       \ })
 
+let g:zim_keymapping=get(g:,'zim_keymapping', {
+      \ '<CR>':'<CR>',
+      \ 'continue_list':'<Leader><CR>',
+      \ 'jump':'<Leader>g',
+      \ 'jump_back':'<Leader>G',
+      \ 'bold':'<Leader>wb',
+      \ 'italic':'<Leader>wi',
+      \ 'highlight':'<Leader>wh',
+      \ 'strike':'<Leader>ws',
+      \ 'title':'<Leader>wt',
+      \ 'header':'<Leader>wH',
+      \ 'all_checkbox_to_li':'<F8>',
+      \ 'li':'<Leader>wl',
+      \ 'checkbox':'<Leader>wc',
+      \ 'checkbox_yes':'<F12>',
+      \ 'checkbox_no':'<S-F12>',
+      \ 'date':'<Leader>wd',
+      \ 'datehour':'<Leader>wD',
+      \ 'explore':'<F9>',
+      \ 'showimg':'<F3>',
+      \ 'editimg':'<S-F3>',
+      \ 'showfile':'<F4>',
+      \ 'editfile':'<S-F4>',
+      \ })
+
 
 "" Zim Wiki format : to be change if wiki format change...
 let g:zim_wiki_version=get(g:,'zim_wiki_version','0.4')
@@ -286,6 +312,27 @@ let g:zim_wiki_prompt={
       \          'title_level': "Title level (between 1 and 5 , else remove style)",
       \          'note_out_of_notebook': "Notes shall be created in a notebook... Aborting",
       \          'input_text': 'Text',
+      \          '?continue_list': 'Create a new bullet under current',
+      \          '?jump': 'Jump to File or Note',
+      \          '?jump_back': 'Jump back...',
+      \          '?bold': 'Format **bold**',
+      \          '?italic': 'Format //italic//',
+      \          '?highlight': 'Format __hightlighted__',
+      \          '?strike': 'Format ~~striked through~~',
+      \          '?title': 'Format = Title =',
+      \          '?header': 'Add Zim file header',
+      \          '?all_checkbox_to_li': 'Convert checkboxes to list',
+      \          '?li': 'Make current line a list item',
+      \          '?checkbox': 'Make an empty checkbox',
+      \          '?checkbox_yes': 'Validate checkbox',
+      \          '?checkbox_no': 'Invalidate checkbox',
+      \          '?date': 'Insert date',
+      \          '?datehour': 'Insert date with hour',
+      \          '?explore': 'View the note explorer',
+      \          '?showimg': 'Open image in an external tool',
+      \          '?editimg': 'Edit image in an external tool',
+      \          '?showfile': 'Open file in an external tool',
+      \          '?editfile': 'Edit file in an external tool',
       \        },
       \ 'fr' : { 'note_name' : 'Nom de la nouvelle note',
       \          'dateformat': "%d/%m/%Y",
@@ -316,5 +363,10 @@ let g:zim_wiki_prompt={
       \          'Place the note under cursor (moving %s)': 'Déplacer la note (%s) sélectionnée à coté de la note sous le curseur',
       \        }
       \}
-
+for s:i in keys(g:zim_matchable) 
+     let g:zim_wiki_prompt['en']['?next'.s:i]='Move cursor to next '.s:i
+endfor
+for s:i in keys(g:zim_matchable) 
+     let g:zim_wiki_prompt['en']['?prev'.s:i]='Move cursor to previous '.s:i
+endfor
 let g:loaded_zim=1

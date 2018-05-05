@@ -16,10 +16,13 @@ elseif exists("b:current_syntax")
   finish
 endif
 
-"syn case ignore
+"Force lang spelling to system
+"exe 'set spell spelllang='.strpart(expand("$LANG"),0,2)
 
+"syn case ignore
 " Zim Header
-syn match zimHeader /^\(Content-Type\|Wiki-Format\|Creation-Date\):\(.*\)\@=\c/ contained
+syn match zimHeader /^\(Content-Type\|Wiki-Format\|Creation-Date\):\(.*\)\@=\c/ contained contains=@NoSpell nextgroup=ZimHeaderParam
+syn match zimHeaderParam /.*/ contained contains=@NoSpell
 syn region zimHeaderRegion
       \ start=/^\(Content-Type\|Wiki-Format\|Creation-Date\):\%1l\c/
       \ end=/^\([^CW].*\|\)$\c/
@@ -27,24 +30,22 @@ syn region zimHeaderRegion
       \ transparent fold
       \ keepend extend
 highlight link zimHeader LineNr
+highlight link zimHeaderParam TabLine
 
 " Titles (h1 to h5)
 syn match Title /^\(=\+\).*\1$/
 
-" Links
-syn match Identifier /\[\[.*\]\]/
-
 " Checkbox
-syn match zimCheckbox /^\(\s\{4}\)*\[[ ]\]\(\s\|$\)/
-syn match zimYes /^\(\s\{4}\)*\[\*\]\(\s\|$\)/
-syn match zimNo  /^\(\s\{4}\)*\[x\]\(\s\|$\)/
+syn match zimCheckbox /^\(\s\{4}\)*\[[ ]\]\(\s\|$\)/me=e-1
+syn match zimYes /^\(\s\{4}\)*\[\*\]\(\s\|$\)/me=e-1
+syn match zimNo  /^\(\s\{4}\)*\[x\]\(\s\|$\)/me=e-1
 highlight zimCheckbox gui=bold guifg=black guibg=#dcdcdc term=bold ctermfg=0 ctermbg=7
 highlight zimYes gui=bold guifg=#65B616 guibg=#dcdcdc term=bold ctermfg=2 ctermbg=7
 highlight zimNo  gui=bold guifg=#AF0000 guibg=#dcdcdc term=bold ctermfg=1 ctermbg=7
 
 " Lists
-syn match ZimBulletItem /^\(\s\{4}\|\t\)*\*\(\s\|$\)/
-syn match ZimNumberedItem /^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)/
+syn match ZimBulletItem /^\(\s\{4}\|\t\)*\*\(\s\|$\)/me=e-1
+syn match ZimNumberedItem /^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)/me=e-1
 "highlight zimBulletItem gui=bold guifg=black guibg=#f4f4f4 term=bold ctermfg=0
 hi link ZimBulletItem Special 
 hi link ZimNumberedItem Special 
@@ -65,36 +66,27 @@ highlight link zimHighlighted DiffChange
 syn match zimStrikethrough /\~\~.*\~\~/
 highlight link zimStrikethrough NonText
 
+" Style : url
+syn match zimwikiUrl '\(^\|\s\)\(www\.\|https\?://\)\S\+'ms=s+1 contains=@NoSpell
+hi def link zimwikiUrl Conceal
 
-"" Next style definitions are based on the fork of YaoPo Wang <blue119@gmail.com>
-"" which include joanrivera vim-zimwiki-syntax <joan.manuel.rivera+dev@gmail.com>
-"" https://github.com/joanrivera/vim-zimwiki-syntax (MIT Licence)
-" Style : code
-syn region zimwikiCode start="'''" end="'''"
-hi def link zimwikiCode	SpecialComment
+syn match zimwikiFile '\(^\|\s\)\(\./\|\~/\|/\)\S\+'ms=s+1 contains=@NoSpell
+hi def link zimwikiFile Conceal
 
-" Style : sub and sup
-syn match zimwikiSub '_{.\{-1,}}'
-syn match zimwikiSup '\^{.\{-1,}}'
-hi def link zimwikiSub	Number
-hi def link zimwikiSup	Number
+" Links
+syn match Identifier /\[\[.*\]\]/
 
-" Style : image
-syn match zimwikiImage '{{.\{-1,}}}'
-hi def link zimwikiImage Float
-
-" Line
-syn match zimHorizontalLine /^\(-\{20}\)$/
-hi link zimHorizontalLine Underlined
-
-
-" Code Block
-highlight link zimHeader LineNr
-
-
+" codeblock (zim add-on)
 fu! s:activate_codeblock()
   " generate by :read!%:p:h/getsourcesfiletype.py
-  let l:languages = {"java" : "java","dtd" : "dtd","lua" : "lua",".desktop" : "desktop","gtkrc" : "gtkrc","r" : "r","html" : "html","m4" : "m4","javascript" : "javascript","xml" : "xml","ruby" : "ruby","c" : "c","xslt" : "xslt","c++" : "cpp","sh" : "sh",".ini" : "dosini","awk" : "awk","perl" : "perl","css" : "css","cmake" : "cmake","diff" : "diff","changelog" : "changelog","gettext-translation" : "po","python" : "python","sql" : "sql","php" : "php"}
+  " let l:languages = {"java" : "java","dtd" : "dtd","lua" : "lua",".desktop" : "desktop","gtkrc" : "gtkrc","r" : "r","html" : "html","m4" : "m4","javascript" : "javascript","xml" : "xml","ruby" : "ruby","c" : "c","xslt" : "xslt","c++" : "cpp","sh" : "sh",".ini" : "dosini","awk" : "awk","perl" : "perl","css" : "css","cmake" : "cmake","diff" : "diff","changelog" : "changelog","gettext-translation" : "po","python" : "python","sql" : "sql","php" : "php"}
+  " the selection is reduced for optimisation and because some syntax files
+  " break spell
+  let l:languages = get(g:,'zim_codeblock_syntax',
+        \{"python": "python","sh": "sh",  "vim": "vim",
+        \ "html": "html", "css": "css",
+        \ "javascript": "javascript"}
+        \)
 
   for l:i in keys(l:languages)
     let l:l = l:languages[l:i]
@@ -109,6 +101,32 @@ fu! s:activate_codeblock()
         \ transparent keepend contains=@NoSpell,ZimCodeBlock.*
 endfu
 call s:activate_codeblock()
+
+" Code Block
+highlight link zimHeader LineNr
+
+
+
+"" Next style definitions are based on the fork of YaoPo Wang <blue119@gmail.com>
+"" which include joanrivera vim-zimwiki-syntax <joan.manuel.rivera+dev@gmail.com>
+"" https://github.com/joanrivera/vim-zimwiki-syntax (MIT Licence)
+" Style : code
+syn region zimwikiCode start="'''" end="'''" contains=@NoSpell
+hi def link zimwikiCode	SpecialComment
+
+" Style : sub and sup
+syn match zimwikiSub '_{.\{-1,}}'
+syn match zimwikiSup '\^{.\{-1,}}'
+hi def link zimwikiSub	Number
+hi def link zimwikiSup	Number
+
+" Style : image
+syn match zimwikiImage '{{.\{-1,}}}' contains=@NoSpell
+hi def link zimwikiImage Float
+
+" Line
+syn match zimHorizontalLine /^\(-\{20}\)$/ contains=@NoSpell
+hi link zimHorizontalLine Underlined
 
 
 let b:current_syntax = "zim"
