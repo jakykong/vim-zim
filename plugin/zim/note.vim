@@ -194,17 +194,21 @@ function! s:setBufferSpecific()
   command! -buffer -nargs=1 -complete=file ZimImgCapture :call zim#editor#InsertImage(<q-args>,g:zim_img_capture)
 
   for s:el in keys(g:zim_matchable)
-    exe 'command! -buffer ZimMatchNext'.s:el." :exe zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')+1,1)"
-    exe 'command! -buffer ZimMatchPrev'.s:el." :exe zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1)"
+    exe 'command! -range -buffer ZimMatchNext'.s:el
+          \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')+1,1),1,0])"
+    exe 'command! -range -buffer ZimMatchPrev'.s:el
+          \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1),1,0])"
   endfor
 
   " Add next and prev matchable items to mappable actions (to use it as shortcut)
   for s:el in keys(g:zim_matchable)
     let g:zim_edit_actions['next'.s:el]={
-          \'n': ":ZimMatchNext".s:el."<Cr>"
+          \'n': ":ZimMatchNext".s:el."<Cr>",
+          \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchNext".s:el."<Cr>gv"
           \}
     let g:zim_edit_actions['prev'.s:el]={
-          \'n': ":ZimMatchPrev".s:el."<Cr>"
+          \'n': ":ZimMatchPrev".s:el."<Cr>",
+          \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchPrev".s:el."<Cr>gv"
           \}
   endfor
 
