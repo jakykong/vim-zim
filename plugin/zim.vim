@@ -25,6 +25,11 @@
 " 2017-06-07 - luffah - v1.1
 "   * Interaction with others files types
 "   * Add images insertion
+" 2018-06-15 - luffah - v1.2
+"   * Add codeblock support
+"   * Add [>] moved checkbox
+"   * Now conceal url link (to only see the title)
+"   * Can fill a note from a web page.
 "
 " What This Plugin Does: 
 " * Provides shortcuts and helpful mappings to work with Zim wiki formatting.
@@ -56,29 +61,6 @@
 "              If you want to reindex living Zim Notebook, click on Zim menu :
 "              'Tools' > 'Update Index'
 "
-" Example configuration :
-" set rtp+=/path/to/zim.vim
-" let g:zim_keymapping={
-"       \ '<CR>':'<CR>',
-"       \ 'continue_list':'<Leader><CR>',
-"       \ 'jump':'<Leader>g',
-"       \ 'jump_back':'<Leader>G',
-"       \ 'bold':'<Leader>b',
-"       \ 'italic':'<Leader>i',
-"       \ 'highlight':'<Leader>h',
-"       \ 'strike':'<Leader>s',
-"       \ 'title':'<Leader>t',
-"       \ 'header':'<Leader>H',
-"       \ 'li':'<Leader>l',
-"       \ 'checkbox':'<Leader>c',
-"       \ 'checkbox_yes':'<Leader>y',
-"       \ 'checkbox_no':'<Leader>n'
-"       \}
-" " On note openning, go 2 lines after the first title
-" let g:zim_open_jump_to=["==.*==", 2]
-" " Or Go 2 lines after the last title
-" let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]
-"
 """"""""""""""""""""""""""""""""
 " Plugin init 
 " (for developpers who wants to test ':let g:zim_dev=1 | source %')
@@ -102,6 +84,21 @@ command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdI ZimCmd :call zim#util#cmd('n',<q-args>,1)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdV -range ZimCmdV :call zim#util#cmd('v',<q-args>,1)
 command! ZimServer :call system('zim --server --gui '.g:zim_notebook .' '.get(g:,'zim_server_options','').' &')
+command! -bar -nargs=1 ZimInjectHtml call s:injecthtml(<q-args>)
+
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes
+      \ ZimNewNoteFromWeb  call zim#note#Create('tabnew',g:zim_notebook,<q-args>)
+      \ | call s:injecthtml(input('Url ? '))
+
+fu! s:injecthtml(url)
+  if(a:url =~ '^https\?:' )
+    exe 'silent read !curl '.a:url.' 2> /dev/null | pandoc -f html -t zimwiki'
+  elseif ( a:url =~ '.[px]\?html$' )
+    exe 'silent read !cat '.a:url.' | pandoc -f html -t zimwiki'
+  else
+    echo zim#util#gettext('Invalid url')
+  endif
+endfu
 
 " The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
 let g:zim_matchable=get(g:,'zim_matchable',{
@@ -171,105 +168,113 @@ let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
 " Default configuration provide a good example
 "
 "" Actions
+let s:ed=":silent call zim#editor#"
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ '<CR>': { 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
       \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<CR>' },
-      \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<CR>' },
+      \ 'jump':{ 'n' : s:ed.'JumpToLinkUnderCursor()<CR>' },
       \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <CR>' },
-      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<CR>$a' },
-      \ 'title': { 'n':  ':call zim#editor#Title()<CR>' },
-      \ 'header':       { 'n':  ':call zim#editor#CreateHeader()<CR>' },
+      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline(''.''))<CR>$a' },
+      \ 'title': { 'n':  s:ed.'Title()<CR>' },
+      \ 'header':       { 'n':  s:ed.'CreateHeader()<CR>' },
       \ 'showimg':       {
-      \    'v':  ':call zim#editor#ShowImageBulk(g:zim_img_viewer)<CR>',
-      \    'n':  ':call zim#editor#ShowImage(g:zim_img_viewer)<CR>'
+      \    'v':  s:ed.'ShowImageBulk(g:zim_img_viewer)<CR>',
+      \    'n':  s:ed.'ShowImage(g:zim_img_viewer)<CR>'
       \},
       \ 'editimg':       {
-      \    'v':  ':call zim#editor#ShowImageBulk(g:zim_img_editor)<CR>',
-      \    'n':  ':call zim#editor#ShowImage(g:zim_img_editor)<CR>'
+      \    'v':  s:ed.'ShowImageBulk(g:zim_img_editor)<CR>',
+      \    'n':  s:ed.'ShowImage(g:zim_img_editor)<CR>'
       \},
       \ 'showfile':       {
-      \    'v':  ':call zim#editor#ShowFileBulk(g:zim_ext_viewer)<CR>',
-      \    'n':  ':call zim#editor#ShowFile(g:zim_ext_viewer)<CR>'
+      \    'v':  s:ed.'ShowFileBulk(g:zim_ext_viewer)<CR>',
+      \    'n':  s:ed.'ShowFile(g:zim_ext_viewer)<CR>'
       \},
       \ 'editfile':       {
-      \    'v':  ':call zim#editor#ShowFileBulk(g:zim_ext_editor)<CR>',
-      \    'n':  ':call zim#editor#ShowFile(g:zim_ext_editor)<CR>'
+      \    'v':  s:ed.'ShowFileBulk(g:zim_ext_editor)<CR>',
+      \    'n':  s:ed.'ShowFile(g:zim_ext_editor)<CR>'
       \},
       \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<CR>' },
-      \ 'li':           { 'n': ":call zim#editor#Bullet('*')<CR>", 'v':":call zim#editor#BulletBulk('*')<CR>" },
-      \ 'checkbox':     { 'n': ":call zim#editor#Bullet('[ ]')<CR>", 'v':":call zim#editor#BulletBulk('[ ]')<CR>"},
-      \ 'checkbox_yes': { 'n': ":call zim#editor#Bullet('[*]')<CR>", 'v':":call zim#editor#BulletBulk('[*]')<CR>"},
-      \ 'checkbox_no':  { 'n': ":call zim#editor#Bullet('[x]')<CR>", 'v':":call zim#editor#BulletBulk('[x]')<CR>"},
+      \ 'li':           { 'n': s:ed."Bullet('*')<CR>", 'v': s:ed."BulletBulk('*')<CR>" },
+      \ 'checkbox':     { 'n': s:ed."Bullet('[ ]')<CR>", 'v': s:ed."BulletBulk('[ ]')<CR>"},
+      \ 'checkbox_yes': { 'n': s:ed."Bullet('[*]')<CR>", 'v': s:ed."BulletBulk('[*]')<CR>"},
+      \ 'checkbox_no':  { 'n': s:ed."Bullet('[x]')<CR>", 'v': s:ed."BulletBulk('[x]')<CR>"},
+      \ 'checkbox_moved':  { 'n': s:ed."Bullet('[>]')<CR>", 'v': s:ed."BulletBulk('[>]')<CR>"},
       \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<CR>'},
       \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<CR>'},
       \ 'bold':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR><Esc>',
-      \   'n': ':call zim#editor#ToggleStyle("**")<CR>'
+      \   'v': s:ed.'ToggleStyleBlock("**")<CR><Esc>',
+      \   'n': s:ed.'ToggleStyle("**")<CR>'
       \ },
       \  'highlight':{
-      \   'v': ':silent call zim#editor#ToggleStyleBlock("__")<CR><Esc>',
-      \   'n': ':silent call zim#editor#ToggleStyle("__")<CR>'
+      \   'v': s:ed.'ToggleStyleBlock("__")<CR><Esc>',
+      \   'n': s:ed.'ToggleStyle("__")<CR>'
       \ },
       \ 'strike': {
-      \   'v':  ':call zim#editor#ToggleStyleBlock("~~")<CR><Esc>',
-      \   'n':  ':call zim#editor#ToggleStyle("~~")<CR>'
+      \   'v':  s:ed.'ToggleStyleBlock("~~")<CR><Esc>',
+      \   'n':  s:ed.'ToggleStyle("~~")<CR>'
       \ },
       \ 'italic': {
-      \   'v' : ':call zim#editor#ToggleStyleBlock("//")<CR><Esc>',
-      \   'n' : ':call zim#editor#ToggleStyle("//")<CR>'
+      \   'v' : s:ed.'ToggleStyleBlock("//")<CR><Esc>',
+      \   'n' : s:ed.'ToggleStyle("//")<CR>'
       \ }
       \})
 
 "" Default keymapping
-let g:zim_keymapping=get(g:,'zim_keymapping', {
-      \ '<CR>':'<CR>',
-      \ 'continue_list':'<Leader><CR>',
-      \ 'jump':'<Leader>g',
-      \ 'jump_back':'<Leader>G',
-      \ 'bold':'<Leader>wb',
-      \ 'italic':'<Leader>wi',
-      \ 'highlight':'<Leader>wh',
-      \ 'strike':'<Leader>ws',
-      \ 'title':'<Leader>wt',
-      \ 'header':'<Leader>wH',
-      \ 'all_checkbox_to_li':'<F8>',
-      \ 'li':'<Leader>wl',
-      \ 'checkbox':'<Leader>wc',
-      \ 'checkbox_yes':'<F12>',
-      \ 'checkbox_no':'<S-F12>',
-      \ 'date':'<Leader>wd',
-      \ 'datehour':'<Leader>wD',
-      \ 'explore':'<F9>',
-      \ 'showimg':'<F3>',
-      \ 'editimg':'<S-F3>',
-      \ 'showfile':'<F4>',
-      \ 'editfile':'<S-F4>',
-      \ })
-
-let g:zim_keymapping=get(g:,'zim_keymapping', {
-      \ '<CR>':'<CR>',
-      \ 'continue_list':'<Leader><CR>',
-      \ 'jump':'<Leader>g',
-      \ 'jump_back':'<Leader>G',
-      \ 'bold':'<Leader>wb',
-      \ 'italic':'<Leader>wi',
-      \ 'highlight':'<Leader>wh',
-      \ 'strike':'<Leader>ws',
-      \ 'title':'<Leader>wt',
-      \ 'header':'<Leader>wH',
-      \ 'all_checkbox_to_li':'<F8>',
-      \ 'li':'<Leader>wl',
-      \ 'checkbox':'<Leader>wc',
-      \ 'checkbox_yes':'<F12>',
-      \ 'checkbox_no':'<S-F12>',
-      \ 'date':'<Leader>wd',
-      \ 'datehour':'<Leader>wD',
-      \ 'explore':'<F9>',
-      \ 'showimg':'<F3>',
-      \ 'editimg':'<S-F3>',
-      \ 'showfile':'<F4>',
-      \ 'editfile':'<S-F4>',
-      \ })
+if get(g:,'zim_dev_keys',0)  
+  let g:zim_keymapping={
+        \ '<cr>':'<cr>',
+        \ 'continue_list':'<leader><cr>',
+        \ 'jump':'gf',
+        \ 'jump_back':'<leader>g',
+        \ 'bold':'<leader>b',
+        \ 'italic':'<leader>i',
+        \ 'highlight':'<leader>h',
+        \ 'strike':'<leader>s',
+        \ 'title':'<leader>t',
+        \ 'header':'<leader>h',
+        \ 'li':'<leader>l',
+        \ 'checkbox':'<leader>c',
+        \ 'checkbox_yes':'<leader>y',
+        \ 'checkbox_no':'<leader>n',
+        \ 'checkbox_moved':'<leader>>',
+        \ 'date':'<leader>d',
+        \ 'datehour':'<leader>d',
+        \ 'explore':'<f9>',
+        \ 'showimg': '<f3>',
+        \ 'editimg': '<s-f3>',
+        \ 'showfile':'<leader><tab>',
+        \ 'editfile':'<leader><s-tab>',
+        \ 'nextkeyelement':'<c-down>',
+        \ 'prevkeyelement':'<c-up>',
+        \ 'nexttitle':'<s-down>',
+        \ 'prevtitle':'<s-up>',
+        \}
+else
+  let g:zim_keymapping=get(g:,'zim_keymapping', {
+        \ '<cr>':'<cr>',
+        \ 'continue_list':'<leader><cr>',
+        \ 'jump':'<leader>g',
+        \ 'jump_back':'<leader>g',
+        \ 'bold':'<leader>wb',
+        \ 'italic':'<leader>wi',
+        \ 'highlight':'<leader>wh',
+        \ 'strike':'<leader>ws',
+        \ 'title':'<leader>wt',
+        \ 'header':'<leader>wh',
+        \ 'all_checkbox_to_li':'<f8>',
+        \ 'li':'<leader>wl',
+        \ 'checkbox':'<leader>wc',
+        \ 'checkbox_yes':'<f12>',
+        \ 'checkbox_no':'<s-f12>',
+        \ 'date':'<leader>wd',
+        \ 'datehour':'<leader>wd',
+        \ 'explore':'<f9>',
+        \ 'showimg':'<f3>',
+        \ 'editimg':'<s-f3>',
+        \ 'showfile':'<f4>',
+        \ 'editfile':'<s-f4>',
+        \ })
+endif
 
 
 "" Zim Wiki format : to be change if wiki format change...
@@ -277,11 +282,15 @@ let g:zim_wiki_version=get(g:,'zim_wiki_version','0.4')
 
 """ Configuration dir of Zim
 let g:zim_config_dir=get(g:,'zim_config_dir','')
-if (! len(g:zim_config_dir))
+if (!len(g:zim_config_dir))
   if has('win32')
     let g:zim_config_dir=''
   else
-    let g:zim_config_dir=(expand('$XDG_CONFIG_HOME') || expand('$HOME/.config')).'/zim'
+    let g:zim_config_dir=$XDG_CONFIG_HOME
+    if (!len(g:zim_config_dir))
+      let g:zim_config_dir=expand('$HOME/.config')
+    endif
+    let g:zim_config_dir.='/zim'
   endif
 endif
 "" When g:zim_open_skip_header is set to true (1),
@@ -303,7 +312,6 @@ let g:zim_open_jump_to=get(g:,'zim_open_jump_to',
 
 ""
 " Messages
-"
 let g:zim_wiki_lang=get(g:,'zim_wiki_lang','fr')
 let g:zim_wiki_prompt={
       \ 'en' : { 'note_name' : 'Name of the new note',

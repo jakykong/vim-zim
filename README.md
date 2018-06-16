@@ -64,17 +64,14 @@ This section give some details about the development of this plugin.
 Authors : [Jack Mudge](https://github.com/jakykong/vim-zim), [Luffah](https://github.com/luffah/vim-zim)
 ```
 License : Public Domain
+          CC-BY-SA for documentation and logo
 
 ## Known issues  
+* When adding note, you shall refresh manually (restart) the index in Zim.
+  In GNU linux see `:h g:zim_update_index_key`.
+* No real Windows Support.
 * Windows :Zim header command uses strftime, but due to working around Microsoft issues,
   it presently only supports Pacific Time Zone .
-* Not an issue with the plugin, but with Zim: There is no way to refresh the index
-  in Zim without restarting Zim. This implies that new files added from Vim will
-  not be visible there until it's restarted.
-  In linux : this can be worked around with XdoTool and by setting a shortcut in Zim. See Doc.
-* Beta Version : Most of the devellopement has been done on Linux.
-  There is no guaranty for navigating and note creation functionnalities to work on Vim Windows.
-* On terminal version of Vim : the notebook explorer is not perfectly redrawed.
 
 ## Changelog
 #### version 0.1 2016-09-13 - Jack Mudge <jakykong@theanythingbox.com>
@@ -85,7 +82,8 @@ License : Public Domain
     * A command to add a header to new Zim files.
 
 #### version 1.0 2017-06-13 - Luffah <luffah@runbox.com>
-*  Provide customisation, helpfile, and navigation features
+* Add documentation and logo
+* Provide customisation, helpfile, and navigation features
 * (change) Header accept user dialog instead of count
 * (change) Syntax color reviewed in order to look more like Zim
 * Mod. CreateZimHeader + minimal support of Linux strftime() + automatic title
@@ -98,4 +96,10 @@ License : Public Domain
 #### version 1.1 2017-07-18 - Luffah <luffah@runbox.com>
 * Allow to open files listed in a note with an external editor
 * Add some tricks in help
+
+#### version 1.2 2018-06-16 - Luffah <luffah@runbox.com>
+* Add codeblock support
+* Add [>] "moving" checkbox
+* Now conceal url link (to only see the title)
+* Can fill a note from a web page.
 ```

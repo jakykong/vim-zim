@@ -198,15 +198,13 @@ function! s:setBufferSpecific()
           \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')+1,1),1,0])"
     exe 'command! -range -buffer ZimMatchPrev'.s:el
           \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1),1,0])"
-  endfor
 
-  " Add next and prev matchable items to mappable actions (to use it as shortcut)
-  for s:el in keys(g:zim_matchable)
-    let g:zim_edit_actions['next'.s:el]={
+    " Add next and prev matchable items to mappable actions (to use it as shortcut)
+    let g:zim_edit_actions[tolower('next'.s:el)]={
           \'n': ":ZimMatchNext".s:el."<Cr>",
           \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchNext".s:el."<Cr>gv"
           \}
-    let g:zim_edit_actions['prev'.s:el]={
+    let g:zim_edit_actions[tolower('prev'.s:el)]={
           \'n': ":ZimMatchPrev".s:el."<Cr>",
           \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchPrev".s:el."<Cr>gv"
           \}
@@ -217,7 +215,7 @@ function! s:setBufferSpecific()
     if has_key(g:zim_keymapping,l:k)
       for l:m in keys(g:zim_edit_actions[l:k])
           if len(g:zim_keymapping[l:k])
-            exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
+            exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[tolower(l:k)][l:m]
           endif
       endfor
     endif
