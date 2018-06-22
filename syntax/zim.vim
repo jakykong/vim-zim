@@ -63,7 +63,7 @@ endif
 "🆚 ⍈ 🆙 🆓 🆗 🆔 🆕 😞
 if exists('g:zim_emochars')
 for s:i in keys(g:zim_emochars)
-  exe 'syn match zimConcealElt'.s:i.' /\(\t\|  \)\(\[\)\@=/ conceal transparent contained cchar='.g:zim_emochars[s:i]
+  exe 'syn match zimConcealElt'.s:i.' /\(\t\|    \)\(\[\)\@=/ conceal transparent contained cchar='.g:zim_emochars[s:i]
 endfor
 endif
 
@@ -160,7 +160,7 @@ endfu
 call s:activate_codeblock()
 
 " Style : verbatim
-syn match zimStyleVerbatim /''.*''/
+syn region zimStyleVerbatim start=/''/ end=/''/ contains=@NoSpell
 syn region zimStyleVerbatim start=/^'''/ end=/'''/ contains=@NoSpell
 hi def link zimStyleVerbatim	SpecialComment
 
@@ -186,9 +186,9 @@ syn match zimInlineArrowChar /\( \)\@<=\(-->\)\( \)\@=/ conceal cchar=→ transp
 " a way to hide things ...()... or …()… or –()–
 syn match zimInlineHiddenText /\([…–]\|\.\.\.\)[(].*[)]\1/ conceal cchar=…  transparent
 
-" IdentedDetails
-syn region zimwikiIndentedCheckboxDetails start=/^\( \{4\}\|\t\)*\(\[[x*]\]\)[_a-z 0-9]*:/ end=/^\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
-syn region zimwikiIndentedDetails start=/^\S[_a-z 0-9]*:/ end=/^\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
+" IdentedDetails 
+syn region zimwikiIndentedCheckboxDetails start=/^\z(\( \{4\}\|\t\)*\)\(\[[x*]\]\)[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\z1\?\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
+syn region zimwikiIndentedDetails start=/^\S[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
 "syn region zimIndentedfold start=/^\( \{4,\}\|\t\)\S/ end=/^\s\{0,3\}\S/me=s-1 contained fold transparent contains=zimElt.*,zimStyle.*,zimInline.*
 "syn region zimwikiIndentedDetails start=/^\( \{4\}|\t\)*\(\[.\]\)\?[_a-z 0-9]*:/ end=/^\s\{0,3\}\S/me=s-1 contains=zimIndentedFold,zimElt.*,zimStyle.*,zimInline.* transparent
 

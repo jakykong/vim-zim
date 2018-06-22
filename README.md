@@ -15,26 +15,22 @@ Zim Desktop Wiki plugin for Vim
 
 How to install
 ================================
-Download zip or do `git clone` using button 'Clone or download'.
-The shall be `~/vim/pack/org/start/zim` (or arbitrary `/path/to/vim-zim` with Vim version<8 ).
+[Download the zip](https://github.com/luffah/vim-zim/archive/master.zip) and unzip it to `~/vim/pack/org/start/zim`.
 
-Then add this in your vim rc.
 
-In Vim 8, you shall just verify this line present :
+In **Vim 8+**, you shall just verify this line present in `.vimrc` :
 ```vim
 syntax on
 packloadall
 ```
-``` Vim
 
-If you use Vim version<8 :
+If you use **Vim 7+** , the `runtimepath` shall be updated in `.vimrc` :
 ```vim
 syntax on
-set rtp+=/path/to/vim-zim
+set rtp+=~/vim/pack/org/start/zim
 ```
-Restart Vim.
 
-Do in command line :
+Verify the plugin is installed :
 
 * To get every commands and parameters ->  `:h Zim`
 * To get a list of your notes -> `:ZimList`
@@ -43,19 +39,19 @@ Do in command line :
 Usage
 =====
 
-This plugin allow to use all Zim notes in Vim.
-It is especially useful :
+##### When you want to use Vim to edit your Zim note
+  Just open the `.txt` file.
 
-* when you want to use Vim to edit your note
-* when you need to fetch informations stored in your NoteBooks
+##### When you want to fetch informations stored in your NoteBooks
+  `:ZimGrep ga` -> show all notes mentioning 'ga'  <br>
+  `:ZimList bu` -> show all notes named 'something-bu'
 
-Use cases :
-* you want all notes mentioning 'foo' : just do `:ZimGrep foo`
-* you want all notes named 'something-foo' : do `:ZimList foo`
-* you want to create a new note : `:ZimNewNote Notes/foo/A Great Name For Bar` will create the files `foo.txt` titled `foo`, and `foo/A_Great_Name_For_Bar.txt` titled `A Great Name For Bar`
-* note that you can use <Tab> completion to get your path with `:ZimNewNote` and `:ZimList`
-* you need to organize the notes in the Notebook foo `:ZimList foo` and use d(detect double) D(delete) N(new note) m(move) R(Rename) keys
-* you need to format the current line as a title, and you don't know the keybind  `:ZimCmd title`
+##### When you want more
+  `:ZimNewNote Notes/Bu/Zo Meu` -> create new note(s) `Bu/Zo Meu.txt` titled 'Zo Meu' (subnote of 'Bu') <br>
+  `:ZimList meu` `m<Down>`(select for move) `m`(move here) -> reorganize notes<br>
+  `:ZimList zo` `d`(detect double) `D`(delete)-> remove a double<br>
+  `:ZimCmd title` -> format the current line as a title (it shows the keybinding before)<br>
+  `:ZimNewNote <Tab>`,  `:ZimList <Tab>`, `:ZimCmd <Tab>` … <br>
 
 About zim-vim
 =============
@@ -101,5 +97,5 @@ License : Public Domain
 * Add codeblock support
 * Add [>] "moving" checkbox
 * Now conceal url link (to only see the title)
-* Can fill a note from a web page.
+* Can fill a note with the content of a web page.
 ```
