@@ -138,7 +138,7 @@ fu! s:activate_codeblock()
   let l:languages = get(g:,'zim_codeblock_syntax',
         \{"python": "python","sh": "sh","sourcecode": "sh",  "vim": "vim",
         \ "html": "html", "css": "css",
-        \ "javascript": "javascript"}
+        \ "javascript": "javascript", "sql": "sql"}
         \)
 
   for l:i in keys(l:languages)
@@ -149,7 +149,7 @@ fu! s:activate_codeblock()
     exe 'syn region zimCodeBlock'.l:l.' start=|lang="'.l:i.'".*$|ms=e+1'.
           \' end=|^}}}|me=e-3 contained contains=@zimcodeblock'.l:l
   endfor
-  syn match ZimCodeBlockBegin /^{{{code:.*$/
+  syn match ZimCodeBlockBegin /^{{{code: /
   syn match ZimCodeBlockEnd /^}}}$/
   hi def link ZimCodeBlockBegin Comment
   hi def link ZimCodeBlockEnd Comment
@@ -184,7 +184,7 @@ hi link zimStyleHorizontalLine Underlined
 syn match vimModeline +\(/\*\s*vim\s*:.*\*/\|//\s*vim\s*:.*\)+
 syn match zimInlineArrowChar /\( \)\@<=\(-->\)\( \)\@=/ conceal cchar=→ transparent
 " a way to hide things ...()... or …()… or –()–
-syn match zimInlineHiddenText /\([…–]\|\.\.\.\)[(].*[)]\1/ conceal cchar=…  transparent
+syn region zimInlineHiddenText start=/\z([…–]\|\.\.\.\)[(]/ end=/[)]\z1/ conceal cchar=…  transparent excludenl
 
 " IdentedDetails 
 syn region zimwikiIndentedCheckboxDetails start=/^\z(\( \{4\}\|\t\)*\)\(\[[x*]\]\)[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\z1\?\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
