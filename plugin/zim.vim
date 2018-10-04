@@ -168,7 +168,7 @@ let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
 " Default configuration provide a good example
 "
 "" Actions
-let s:ed=":silent call zim#editor#"
+let s:ed=":call zim#editor#"
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
       \ '<CR>': { 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
       \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<CR>' },
