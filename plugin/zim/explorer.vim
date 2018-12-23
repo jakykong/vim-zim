@@ -4,8 +4,11 @@
 ""
 
 " Easily change g:zim_notebook
-function! zim#explorer#SelectNotebook()
-  new | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
+function! zim#explorer#SelectNotebook(whereopen)
+  if len(a:whereopen)
+    exe a:whereopen
+  endif
+  enew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline
   call setline(1, [ g:zim_notebooks_dir ]+
         \ filter(
         \ split(globpath(g:zim_notebooks_dir,'*'),"\n"),
@@ -57,38 +60,51 @@ function! zim#explorer#interactiveRename()
   call zim#explorer#getLine()
   if len(b:current_id)
       let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
-      let l:note_name=input( zim#util#gettext('note_name').' ? ')
+      let l:note_name=zim#note#getFilenameFromName(
+            \input( zim#util#gettext('note_name').' ? ') )
       call zim#note#Move(0,b:current_id,l:tgt.'/'.l:note_name) 
   endif
   silent call zim#explorer#ListUpdate()
 endfunction
 
-function! zim#explorer#interactiveNewNote()
+function! zim#explorer#interactiveNewNote(whereopen)
+  let l:curwin=win_getid()
   call zim#explorer#getLine()
   if len(b:current_id)
-      let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
-      let l:note_name=input( zim#util#gettext('note_name').' ? ')
-      call zim#note#Create(g:zim_notebook,l:tgt.'/'.l:note_name) 
+      let l:tgt=substitute(b:current_id,'\.\(txt\|zim\)$','','')
+      let l:tgttab=split(l:tgt, '/')
+      let l:sug=l:tgttab[-1]
+      let l:tgt=join(l:tgttab[0:-2],'/')
+      " let l:tgt=substitute(b:current_id,'/[^/]*\.\(txt\|zim\)$','','')
+      let l:note_name=input( zim#util#gettext('note_name').' ? ',l:sug, 'customlist,zim#util#_CompleteNotes' )
+      call zim#note#Create(a:whereopen,g:zim_notebook,l:tgt.'/'.l:note_name) 
+      let l:newwin=win_getid()
   endif
+  call win_gotoid(l:curwin)
+  call zim#explorer#ListUpdate()
+  call win_gotoid(l:newwin)
 endfunction
 
-function! zim#explorer#List(dir,...)
+function! zim#explorer#List(whereopen,dir,...)
   let l:filter=""
   if len(a:000) && len(a:1)
     let l:filter=a:1
   endif
-  tabnew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline 
+  if len(a:whereopen)
+    exe a:whereopen
+  endif
+  enew | set buftype=nowrite ft=zimindex | setlocal nowrap cursorline 
   let b:dir=a:dir | let b:filter=l:filter | let b:detect_doubles=0 
   let b:current_id='' | let b:moving_id=''
-  "" Openning the file in a vertical new slit (vnew) on Return:
-  nnoremap <buffer> <cr> :silent call zim#util#setWindow('','','','', zim#explorer#getLine())<cr>
-  nnoremap <buffer> <space> :silent call zim#util#setWindow('w','v','','W',zim#explorer#getLine())<cr>
-  nnoremap <buffer> u    :silent call zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
-  nnoremap <buffer> d    :silent call zim#explorer#getLine()<bar>let b:detect_doubles=!b:detect_doubles<bar>call zim#explorer#ListUpdate() <cr>
+  "" Openning the file in a vertical new split (vnew) on Return:
+  nnoremap <silent> <buffer> <cr> :call zim#util#open('','', 1, zim#explorer#getLine())<cr>
+  nnoremap <silent> <buffer> <space> :call zim#util#open((len(tabpagebuflist())>1?'wincmd w':'vertical rightbelow split'),'', 0,zim#explorer#getLine())<cr>
+  nnoremap <silent> <buffer> u  :call zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
+  nnoremap <silent> <buffer> d  :call zim#explorer#getLine()<bar>let b:detect_doubles=!b:detect_doubles<bar>call zim#explorer#ListUpdate() <cr>
   nnoremap <buffer> m    :call zim#explorer#interactiveMove()<cr>
-  nnoremap <buffer> N    :call zim#explorer#interactiveNewNote()<cr>
+  nnoremap <buffer> N    :call zim#explorer#interactiveNewNote('rightbelow vertical split')<cr>
   nnoremap <buffer> R    :call zim#explorer#interactiveRename()<cr>
-  nnoremap <buffer> D    :exe '!rm -i '.zim#explorer#getLine()<bar>call zim#explorer#ListUpdate()<cr>
+  nnoremap <buffer> D    :if(input(zim#util#gettext('Delete note').'[Y/n]') !~ "^[Nn]") <bar> call system('rm '.zim#explorer#getLine()) <bar> endif <bar> call zim#explorer#ListUpdate()<cr>
   exe "nnoremap <buffer> f    :silent call zim#explorer#getLine()<bar>let b:filter=input('".zim#util#gettext('Change filter :')."') <bar> call zim#explorer#ListUpdate()<cr>"
   nnoremap <buffer> q :q<cr>
   call zim#explorer#ListUpdate()
@@ -119,24 +135,24 @@ function! zim#explorer#getNotesList(dir,filter,detect_doubles)
   let l:ret=[]
   for l:i in split(globpath(a:dir,'*'),"\n")
       if isdirectory(l:i)
-        if !(empty(b:moving_id))
-          call add(l:ret, substitute(substitute(l:i,g:zim_notebook.'/*','','')
-                \, '/', ' : ', 'g'))
-          let b:line_count+=1
-        endif
+"        if !(empty(b:moving_id))
+"          call add(l:ret, substitute(substitute(l:i,g:zim_notebook.'/*','','')
+"                \, '/', ' : ', 'g'))
+"          let b:line_count+=1
+"        endif
         call extend(l:ret ,zim#explorer#getNotesList(l:i,a:filter,0))
       else
         let l:i=substitute(l:i,g:zim_notebook.'/*','','')
         if b:current_id == l:i
-          if b:moving_id == l:i
-            let l:i.=' | MOVING '
-          endif
           let b:selected_idx_in_list=b:line_count
         endif
-        if l:i =~ a:filter
+        if b:moving_id == l:i
+          call add(l:ret, substitute(l:i.' | MOVING ', '/', ' : ', 'g'))
+          let b:line_count+=1
+        elseif  l:i =~ a:filter
           call add(l:ret, substitute(l:i, '/', ' : ', 'g'))
+          let b:line_count+=1
         endif
-        let b:line_count+=1
       endif
   endfor
   if a:detect_doubles

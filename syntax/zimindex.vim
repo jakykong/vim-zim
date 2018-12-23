@@ -13,7 +13,10 @@ syn case ignore
 "syn region zimIndexHeaderRegion start="^:\%1l" end="^\(---.*\|\)$" contains=zimIndexHeader keepend
 
 " Style : hightlighted
-syn match MoreMsg /.*\( -> .*\)\@=/
+syn match Title /<--.*-->/
+syn match Conceal /%\(\s\?[A-Za-z0-9- ]\+\)\?/
+syn match Ignore /||/
+syn match MoreMsg /<\?[A-Za-z0-9-_ ]\+>\?\(\s* -> .*|\?\)\@=/
 "syn match Directory /.* :/
 "syn match Title /[^: ]*\.txt$/
 syn match TODO /[^: ]*\.txt /

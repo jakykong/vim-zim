@@ -1,16 +1,35 @@
+function! zim#note#getFilenameFromName(name)
+  let l:fname=substitute(a:name,'\([ !?:\*]\)\+','_','g')
+  let l:fname=substitute(l:fname,"'",'_','g')
+  let l:fname=substitute(l:fname,'\(\.txt\)\?$','.txt','g')
+  return l:fname
+endfu
+
 "" Create Zim Note in a buffer, i.e., for a new file
 " @param string dir  Notebook dir
 " @param string name Path to the note
-function! zim#note#Create(dir,name)
-  let l:note=a:dir.'/'.substitute(
-        \substitute(a:name,'\([ :\*]\)\+','_','g'),
-        \'\(\.txt\)\?$','.txt','g')
+function! zim#note#Create(whereopen,dir,name)
+  if !len(a:name)
+    echomsg zim#util#gettext('note_out_of_notebook')
+    return
+  endif
+  let l:nsplit=split(a:name.'/','/')
+  let l:note_name=l:nsplit[-1]
+  let l:note_dir=join(l:nsplit[0:-2],'/')
+  if empty(l:note_name)
+    let l:note_name=input( zim#util#gettext('note_name').' ? ')
+  endif
+
+  let l:note=a:dir.'/'.l:note_dir.'/'.zim#note#getFilenameFromName(l:note_name)
   if l:note !~ g:zim_notebooks_dir.'/.*/.*.txt'
     echomsg zim#util#gettext('note_out_of_notebook')
   else
     let l:dirs=split(substitute(
           \substitute(l:note,'/[^/]*$','',''),g:zim_notebooks_dir,'',''),'/')
     if isdirectory(g:zim_notebooks_dir.'/'.l:dirs[0])
+      if len(a:whereopen)
+        exe a:whereopen
+      endif
       if !filereadable(l:note)
         " path begin with Notebook name
         let l:notebook=l:dirs[0]
@@ -22,10 +41,10 @@ function! zim#note#Create(dir,name)
             call mkdir(g:zim_notebooks_dir.'/'.l:path,'p', 0700)
           endif
           if !filereadable(g:zim_notebooks_dir.'/'.l:path.'.txt')
-            call zim#note#Create(g:zim_notebooks_dir,l:path)
+            call zim#note#Create(a:whereopen,g:zim_notebooks_dir,l:path)
           endif
         endfor
-        exe 'vnew '.l:note
+        exe 'e '.l:note
         call zim#editor#CreateHeader()
         silent exe 'silent w'
         if has('win32')
@@ -42,7 +61,7 @@ function! zim#note#Create(dir,name)
         endif
       else
         echomsg printf(zim#util#gettext("Note '%s' already exists"),l:dirs[0])
-        exe 'vnew '.l:note
+        exe 'e '.l:note
       endif
     else
       echomsg printf(zim#util#gettext("NoteBook '%s' not exists"),l:dirs[0])
@@ -167,38 +186,43 @@ function! s:setBufferSpecific()
   setlocal softtabstop=4
   setlocal shiftwidth=4
   
+  " add commamds avaible for the note
+  command! -buffer -nargs=* ZimGrepThis :call zim#explorer#SearchInNotebook(expand('<cword>'))
+  command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
+
+  command! -buffer -nargs=1 -complete=file ZimImgInsert :call zim#editor#InsertImage(<q-args>,'')
+  command! -buffer -nargs=1 -complete=file ZimImgCapture :call zim#editor#InsertImage(<q-args>,g:zim_img_capture)
+
+  for s:el in keys(g:zim_matchable)
+    exe 'command! -range -buffer ZimMatchNext'.s:el
+          \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')+1,1),1,0])"
+    exe 'command! -range -buffer ZimMatchPrev'.s:el
+          \." call setpos(mode()=='n'?'.':\"'>\",[0,zim#util#line([{'default': line('.')},'".g:zim_matchable[s:el]."'],line('.')-1,-1),1,0])"
+
+    " Add next and prev matchable items to mappable actions (to use it as shortcut)
+    let g:zim_edit_actions[tolower('next'.s:el)]={
+          \'n': ":ZimMatchNext".s:el."<Cr>",
+          \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchNext".s:el."<Cr>gv"
+          \}
+    let g:zim_edit_actions[tolower('prev'.s:el)]={
+          \'n': ":ZimMatchPrev".s:el."<Cr>",
+          \'v': ":<C-r>=execute('norm gv')<Cr>ZimMatchPrev".s:el."<Cr>gv"
+          \}
+  endfor
+
   " add key mappings
   for l:k in keys(g:zim_edit_actions)
     if has_key(g:zim_keymapping,l:k)
       for l:m in keys(g:zim_edit_actions[l:k])
-        exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[l:k][l:m]
+          if len(g:zim_keymapping[l:k])
+            exe l:m.'noremap <buffer> '.g:zim_keymapping[l:k].' '.g:zim_edit_actions[tolower(l:k)][l:m]
+          endif
       endfor
     endif
   endfor
-  
-  " add commamds
-  command! -buffer -nargs=* ZimGrepThis :call zim#explorer#SearchInNotebook(expand('<cword>'))
-  command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
-  
   let l:i=line('.')
-  let l:step=1
   if l:i == 1
-    let l:e=line('$')
-    for l:j in g:zim_open_jump_to
-      if type(l:j) == type(0)
-        let l:i+=l:j
-      elseif type(l:j) == type({})
-        if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
-        if has_key(l:j, 'sens') | let l:step=(l:j['sens']==0?1:l:j['sens']) | endif
-      else
-        while l:i > 0 && l:i <= l:e && getline(l:i) !~ l:j
-          let l:i+=l:step
-        endwhile
-      endif
-      if l:i <= 0 | let l:i = 1 | break | endif
-      if l:i > l:e | let l:i = l:e | break | endif
-		  unlet l:j  " E706 without this
-    endfor
+    let l:i=zim#util#line(g:zim_open_jump_to, 1, 1)
   endif
   if l:i == 1 && g:zim_open_skip_header
     while getline(l:i) =~ 
@@ -208,4 +232,5 @@ function! s:setBufferSpecific()
   endif
   exe l:i
 endfu
+
 autocmd! Filetype zim call s:setBufferSpecific()

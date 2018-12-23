@@ -1,6 +1,6 @@
 *zim.txt*   *Zim* Note wrapper for Vim 
 
-                                                          *Zim* *zim.vim*
+                                                            *zim.vim*
             ___    /   /                                             ~
            |_ _|  /  /         _________      _                       ~
     ___      |_  / /          |_______  |    | |                      ~
@@ -18,6 +18,8 @@
       VARIABLES  = = = = = = = = = = = = = = = = = = =  |zim-variables|
       COMMANDS = = = = = = = = = = = = = = = = = = = =  |zim-commands|
       EDITOR ACTIONS AND KEYBINDINGS = = = = = = = = =  |zim-editing|
+      API  = = = = = = = = = = = = = = = = = = = = = =  |zim-api|
+      TRICKY THINGS  = = = = = = = = = = = = = = = = =  |zim-tricky|
 
 ==============================================================================
 DESCRIPTION                                                        *zim-intro*
@@ -95,18 +97,116 @@ VARIABLES                                                       *zim-variables*
 
 
 *g:zim_open_jump_to*
-                   Set where the cursor is positionned in the file on openning
+                   Set where the cursor is positionned on file openning.
+                   This is done by a succession of movements.
+
+                   This is implemented by the function zim#util#line({array}),
+                   which return the line number found and move the cursor only
+                   if it needs to do scrolling.
+
+                   The array can contain 3 types of variables (mouvements),
+                   with different meanings :
+                     string   text pattern  e.g. 'My Awesome Title'
+                                            e.g. '^\(=\+\).*\1$'
+                              see *regular-expression* *regexp*
+
+                     integer  line delta  e.g. -1 to go back 1 line
+
+                     dict     {
+                        'init': '$' or '^' or any 'line' position
+
+                        'sens' : (-1 or 1) line step for searching text
+
+                        'get': a key for storing current line number
+
+                        'set': an existing key to reinit line position
+
+                        'scroll': a list of scroll commands
+                             Either
+                                  'top','center','bottom' to scroll until the
+                                  cursor is at the nammed position
+                             Or
+                                  an integer, indication how many line to
+                                  scroll
+                     }
+
                    Examples :
                    " On note openning, go 2 lines after the first title
                    let g:zim_open_jump_to=["==.*==", 2]
                    " Or Go 2 lines after the last title
                    let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
 
+*g:zim_matchable*
+                   Enable commands ZimMatchNext<Matchable> and
+                   ZimMatchPrev<Matchable>.
+
+                   dict {
+                     'Title': text pattern  e.g. '^\(=\+\).*\1$',
+                              see |regular-expression| |regexp|
+                      ...
+                   }
+
+                   Examples :
+                   " have a match for almost every zim standard element
+                   let g:zim_matchable={
+                       \'Title':        '^\(=\+\).*\1$',
+                       \'Checkbox':     '^\(\s\{4}\)*\[[ ]\]\(\s\|$\)',
+                       \'Li':           '^\(\s\{4}\|\t\)*\*\(\s\|$\)',
+                       \'NumberedItem': '^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)',
+                       \'Link':         '\[\[.*\]\]',
+                       \'Img':          '{{.*}}',
+                       \'File':         '\(\~\|\.\|^\| \|{\|\[\)/[.a-zA-Z0-9]\+',
+                       \'Url':          'http[s]\?://[.a-zA-Z0-9]\+',
+                       \ }
+
+
+*g:zim_img_capture*
+                   Define a shell command to capture screenshots.
+                   Default : 'sleep 2; scrot -s'
+                             "wait 2 second to avoid scrot capturing keys
+                   This default only work for linux.
+
+*g:zim_img_viewer*
+*g:zim_img_editor*
+*g:zim_ext_viewer*
+*g:zim_ext_editor*
+                   Define viewer and editor commands based of the file type.
+
+                   |g:zim_img_viewer| and |g:zim_ext_editor|
+                     are specific to Zim images ( between {{ }} ).
+
+                   array [
+                      array [
+                        (filetype)      text-pattern,
+                                        see |regular-expression| |regexp|
+                        (shell command) text,
+                        (optionnal)     number
+                              0 to open all matched files in one instance
+                              1 to open one file per instance
+                              n to open n   files per instance
+                              Default is 0.
+                      ]
+                      array ...
+                    ]
+                    Example :
+                    " Open in images in feh
+                    let g:zim_img_viewer=[
+                      \[
+                      \  '\.\(png\|jp[e]\?g\|svg\|gif\)$',
+                      \  'feh --magick-timeout 1'
+                      \],
+                    \]
+
+                    If no overide is done, default openner is 'xdg-open',
+                    which shall not work on Windows.
+
+                    To use this functionnality, you need to add to 
+                    the actions 'show_img','edit_img','show_file','edit_file'
+                    in *g:zim_keymapping*.
 
 *g:zim_dev*
                     For developers.
                     Set to 1 to reload function on plugin/zim.vim sourcing.
-
 
 ==============================================================================
 COMMANDS                                                        *zim-commands*
@@ -117,7 +217,10 @@ COMMANDS                                                        *zim-commands*
 
                     Set |g:zim_notebook| = <notebook_name>
 
-:ZimList <note_name_pattern>                                         *:ZimList*
+:ZimListThis                                                    *:ZimListThis*
+                    :ZimList with word under cursor.
+
+:ZimList <note_name_pattern>                                        *:ZimList*
                     Arguments are completed in wild menu.
 
                     Open a temporary window to choose notes to open.
@@ -160,9 +263,13 @@ COMMANDS                                                        *zim-commands*
 
                      q        -> Quit
 
-                     Note: Display appear to be broken when using 'm' operation
-                           in terminal (text-mode) version of vim. Switch tab
-                           if you need to redraw.
+                    Note : Display appear to be broken when using 'm' operation
+                          in terminal (text-mode) version of vim. Switch tab
+                          if you need to redraw.
+
+                    Note : openning is defined in zim/explorer.vim and
+                          is performed using the function |zim#util#open()|
+
 
 :ZimNewNote <note_path_in_notebook>                               *:ZimNewNote*
                     Arguments are completed in wild menu.
@@ -174,6 +281,10 @@ COMMANDS                                                        *zim-commands*
                     [ Linux only ]
                     If |g:zim_update_index_key| is set and `xdotool` is found,
                     then it tries to locate Zim window and to send the key.
+
+:ZimNewNoteFromWeb <note_path_in_notebook>                 *:ZimNewNoteFromWeb*
+                    Idem. It adds a prompt to enter the URL of the remote
+                    content to inject.
 
 :ZimCopy  <note_path_in_notebook> <note_path_in_notebook>            *:ZimCopy*
 :ZimMove  <note_path_in_notebook> <note_path_in_notebook>            *:ZimMove*
@@ -188,6 +299,9 @@ COMMANDS                                                        *zim-commands*
                     If |g:zim_update_index_key| is set and `xdotool` is found,
                     then it tries to locate Zim window and to send the key.
 
+:ZimGrepThis                                                     *:ZimGrepThis*
+                    :ZimGrep with word under cursor.
+
 :ZimGrep <pattern>                                                   *:ZimGrep*
                     Open a location list for
                     the matches of <pattern> in g:zim_notebook.
@@ -197,6 +311,25 @@ COMMANDS                                                        *zim-commands*
                     
                     Set |g:zim_notebook|
 
+:ZimImgInsert  <filepath>                                       *:ZimImgInsert*
+                    Insert image pointed by filepath at cursor position. 
+                    
+:ZimImgCapture  <filepath>                                     *:ZimImgCapture*
+                    Make a screenshot and save it in filepath,
+                    next, the image is inserted at cursor position. 
+                    
+
+:ZimMatchPrev...                                     *:ZimMatchPrev...*
+:ZimMatchNext...                                     *:ZimMatchNext...*
+                    Go to the previous / next position of the element type.
+                    See |g:zim_matchable|
+
+:ZimInjectHtml <url>                                 *:ZimInjectHtml*
+                    [require pandoc installed]
+
+                    Convert the content of the (local or remote) HTML file,
+                    to ZimWiki format and add the result at the current
+                    position.  
 
 ==============================================================================
 EDITOR ACTIONS AND KEYBINDINGS                                   *zim-editing*
@@ -208,31 +341,144 @@ If you wish to modify keys just re-defined |g:zim_keymapping|.
 If you wish to modify the mode in which the keys are used , then you need to
 redefine |g:zim_edit_actions|. (see the code ../plugins/zim.vim to have a basis).
 
+                                                  *zim_keymapping*
 Here is a summary of the default settings.
- ------------------- ----- -------------- --------------------------------
-|Actions            | Mode| Default Key  | Description                    |
-+-------------------+-----+--------------+---------------------------------
-==Facilities==
-|<cr>               | i   | <CR>         |_ <Enter> tries to continue a list 
-|continue_list      | n   | <Leader><CR> |_ Continue a list (point, numbered,
-|                   |     |              |  or checkbox)
-|all_checkbox_to_li | n   | <F8>         |_ Facility to remove every checkbox
-|header             | n   | <Leader>wH   |_ Add a Zim Header and set the first
-|                   |     |              |   title
-==Navigation==
-|jump               | n   | <Leader>g    |_ Jump to another note
-|jump_back          | n   | <Leader>G    |_ Jump back
-|
-==  Style   ==
-|bold               | n,v | <Leader>wb   |_ Bold style for selection or line
-|italic             | n,v | <Leader>wi   |_ Italic style for selection or line
-|highlight          | n,v | <Leader>wh   |_ Highlight selection or line
-|strike             | n,v | <Leader>ws   |_ Strike  selection or line
-|title              | n   | <Leader>wt   |_ Title style ( 1 to 5 )
-|li                 | n   | <Leader>wl   |_ Make the line a list item
-|checkbox           | n   | <Leader>wc   |_ Make the line a checkable item
-|checkbox_yes       | n   | <F12>        |_ Make the line a valid checkbox 
-|checkbox_no        | n   | <S-F12>      |_ Make the line an invalid checkbox 
-|
+┌──────────────────┬────┬────────────┬─────────────┬─────────────────────────────┐
+│Actions           │Mode│Default Keys│Dev Keys     │ Description                 │
+│──────────────────┼────┼────────────┼─────────────┼─────────────────────────────┤
+│-Style------------│----│------------│-------------│-----------------------------│
+│bold              │n,v │<Leader>wb  │<Leader>b    │ Bold style.                 │
+│italic            │n,v │<Leader>wi  │<Leader>i    │ Italic style.               │
+│highlight         │n,v │<Leader>wh  │<Leader>h    │ Highlight.                  │
+│strike            │n,v │<Leader>ws  │<Leader>s    │ Strike through.             │
+│title             │n   │<Leader>wt  │<Leader>t    │ Title style ( 1 to 5 ).     │
+│li                │n,v │<Leader>wl  │<Leader>l    │ List item.                  │
+│checkbox          │n,v │<Leader>wc  │<Leader>c    │ Empty checkbox              │
+│checkbox_yes      │n,v │<F12>       │<Leader>y    │ → check "Yes/Correct"       │
+│checkbox_no       │n,v │<S-F12>     │<Leader>n    │ → check "No/Incorrect"      │
+│checkbox_moved    │n,v │<Leader>w>  │<Leader>>    │ → check "Moved"             │
+│                  │    │            │             │                             │
+│-Facilities-------│----│------------│-------------│-----------------------------│
+│<cr>              │i   │<CR>        │<CR>         │ <Enter> continue the list.  │
+│continue_list     │n   │<Leader><CR>│<Leader><CR> │ Continue a list             │
+│                  │    │            │             │ (dot, numbered or checkbox).│
+│all_checkbox_to_li│n   │<F8>        │             │ Remove every checkbox.      │
+│header            │n   │<Leader>wH  │<Leader>H    │ Add a Zim header.           │
+│date              │n   │<Leader>d   │<Leader>d    │ Insert today date.          │
+|datehour          │n   │<Leader>D   │<Leader>D    │ Insert today date and hour. │
+│showimg           │n   │<F3>        │<F3>         │ Open image in viewer.       │
+│editimg           │n   │<S-F3>      │<S-F3>       │ Open image in editor.       │
+│showfile          │n   │<F4>        │<Leader><Tab>│ Open file in viewer.        │
+│editfile          │n   │<S-F4>      │<Leader>     │ Open file in editor.        │
+│                  │    │            │    <S-Tab>  │                             │
+│-Navigation-------│----│------------│-------------│-----------------------------│
+│jump              │n   │<Leader>g   │gf           │ Jump to another note.       │
+│jump_back         │n   │<Leader>G   │<Leader>G    │ Jump back.                  │
+│explore           │n   │<F9>        │<F9>         │ Open parent folder.         │
+│nextKeyElement    │n   │            │<C-Up>       │ Go/Focus the next element   │
+│                  │    │            │             │ (title, link, checkbox).    │
+│prevKeyElement    │n   │            │<C-Down>     │ Go/Focus previous element.  │
+│nextTitle         │n   │            │<S-Up>       │ Go/Focus the next title.    │
+│prevTitle         │n   │            │<S-Down>     │ Go/Focus previous title.    │
+└──────────────────┴────┴────────────┴─────────────┴─────────────────────────────┘
+
+If you do nothing, then the "Default Keys" will be used.
+                                                             *g:zim_dev_keys*
+You can use the keys used by the 2nd developer "Dev Keys" by adding
+the following line to your configuration file : >
+  let g:zim_dev_keys=1
+<
+Note: This setting will override every definition of g:zim_keymapping,
+because it is the best keymap definition. 
+
+The "dev" keys are defined like this: >
+  let g:zim_keymapping={
+      \ '<CR>':'<CR>',
+      \ 'continue_list':'<Leader><CR>',
+      \ 'jump':'gf',
+      \ 'jump_back':'<Leader>G',
+      \ 'bold':'<Leader>b',
+      \ 'italic':'<Leader>i',
+      \ 'highlight':'<Leader>h',
+      \ 'strike':'<Leader>s',
+      \ 'title':'<Leader>t',
+      \ 'header':'<Leader>H',
+      \ 'li':'<Leader>l',
+      \ 'checkbox':'<Leader>c',
+      \ 'checkbox_yes':'<Leader>y',
+      \ 'checkbox_no':'<Leader>n',
+      \ 'checkbox_moved':'<Leader>>',
+      \ 'date':'<Leader>d',
+      \ 'datehour':'<Leader>D',
+      \ 'showimg': '<F3>',
+      \ 'editimg': '<S-F3>',
+      \ 'showfile':'<Leader><Tab>',
+      \ 'editfile':'<Leader><S-Tab>',
+      \ 'nextKeyElement':'<C-Down>',
+      \ 'prevKeyElement':'<C-Up>',
+      \ 'nextTitle':'<S-Down>',
+      \ 'prevTitle':'<S-Up>',
+      \}
+<
+==============================================================================
+API                                                                   *zim-api*
+
+Functions you can use :
+
+zim#util#line({array})
+  A complex function to find a line number.
+  see |g:zim_open_jump_to| |zim#util#line()|
+
+zim#util#open({openning-window},{edit-opt},{focus},{file})
+   A function for file in a split or in current window.
+  {openning-window} contains commands to create split
+  {edit-opt}        contains the commands like 'noswapfile' 
+  {focus}           is a 0 or 1 value to say to focus on new buffer
+  {file}            is the file full path
+
+
+==============================================================================
+TRICKY THINGS                                                      *zim-tricky*
+
+Setup a TODOLIST                                                 *zim-todolist*
+----------------
+In your vimrc file, add >
+
+  function! s:todolist(whereopen)
+    call zim#util#open(
+          \ a:whereopen,
+          \ 'noswapfile',
+          \ 1,
+          \ g:zim_notebooks_dir.'/Notes/TODO.txt')
+
+    " find to first empty checkbox; find the title of the section it belong
+    " and make this title to be the second line of the window
+    exe zim#util#line([
+          \ '==.*==',
+          \ '\[ \].*',
+          \ {'get': 1, 'sens':-1},
+          \ '==.*==',
+          \ {'scroll': ['top',1], 'set':1}
+          \ ])
+
+    " put highlight on current line
+    hi CursorLine gui=bold guibg=white guifg=black 
+    setlocal cul
+
+  endfunction
+  command! Todo :silent call s:todolist('vertical leftabove split')
+
+  function! s:autostart()
+    if !exists('g:loaded_todo') && empty(bufname('%'))
+      call s:todolist('')
+      let g:loaded_todo=1
+    endif
+  endfunction
+
+  augroup _zim_autostart | autocmd!
+  autocmd VimEnter <buffer> silent call s:autostart()
+  augroup END
+<
+
 ==============================================================================
 vim:tw=78:fo=tcq2:isk=!-~,^*,^\|,^\":ts=8:ft=help:norl:

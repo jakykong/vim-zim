@@ -10,6 +10,6 @@ function! Ftdetect_zim()
 endfunction
 
 
+augroup Zim
 au BufNewFile,BufRead *.txt call Ftdetect_zim()
-
-
+augroup END

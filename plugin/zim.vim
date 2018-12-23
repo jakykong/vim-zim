@@ -2,9 +2,9 @@
 " Author: Jack Mudge <jakykong@theanythingbox.com>
 " * I declare this file to be in the public domain.
 "
-" Last Change:	2017 June 7
+" Last Change:	2017 July 18
 " Maintainer: Luffah <luffah@runbox.com>
-" Version: 0.2
+" Version: 1.1
 "
 " Changelog:
 " 2016-09-12 - Jack Mudge - v0.1
@@ -20,6 +20,16 @@
 " 2017-06-07 - luffah - v0.3
 "   * Add note and notebook creation commands
 "   * Add workarounds to force Zim re-indexing
+" 2017-06-13 - luffah - v1
+"   * Add notebook navigation features
+" 2017-06-07 - luffah - v1.1
+"   * Interaction with others files types
+"   * Add images insertion
+" 2018-06-15 - luffah - v1.2
+"   * Add codeblock support
+"   * Add [>] moved checkbox
+"   * Now conceal url link (to only see the title)
+"   * Can fill a note from a web page.
 "
 " What This Plugin Does: 
 " * Provides shortcuts and helpful mappings to work with Zim wiki formatting.
@@ -51,29 +61,6 @@
 "              If you want to reindex living Zim Notebook, click on Zim menu :
 "              'Tools' > 'Update Index'
 "
-" Example configuration :
-" set rtp+=/path/to/zim.vim
-" let g:zim_keymapping={
-"       \ '<cr>':'<CR>',
-"       \ 'continue_list':'<Leader><CR>',
-"       \ 'jump':'<Leader>g',
-"       \ 'jump_back':'<Leader>G',
-"       \ 'bold':'<Leader>b',
-"       \ 'italic':'<Leader>i',
-"       \ 'highlight':'<Leader>h',
-"       \ 'strike':'<Leader>s',
-"       \ 'title':'<Leader>t',
-"       \ 'header':'<Leader>H',
-"       \ 'li':'<Leader>l',
-"       \ 'checkbox':'<Leader>c',
-"       \ 'checkbox_yes':'<Leader>y',
-"       \ 'checkbox_no':'<Leader>n'
-"       \}
-" " On note openning, go 2 lines after the first title
-" let g:zim_open_jump_to=["==.*==", 2]
-" " Or Go 2 lines after the last title
-" let g:zim_open_jump_to=[{'init': '$', 'sens': -1}, "==.*==", 2]]
-"
 """"""""""""""""""""""""""""""""
 " Plugin init 
 " (for developpers who wants to test ':let g:zim_dev=1 | source %')
@@ -81,17 +68,57 @@ if (!get(g:,'zim_dev',0) && get(g:,'loaded_zim',0)) || &cp | finish | endif
 
 "'"'""'"'"'"'"'"'"'"'"'"'"'"'"'"
 ""
-"  Avaible commands
+"  Globally avaible commands (other commands are defined in zim/note.vim)
 "
-command! ZimSelectNotebook :call zim#explorer#SelectNotebook()
+command! ZimSelectNotebook :call zim#explorer#SelectNotebook('split')
 command! ZimCreateHeader :call zim#editor#CreateHeader()
 command! -nargs=* ZimGrep :call zim#explorer#SearchTermInNotebook(<q-args>)
-command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimNewNote :call zim#note#Create(g:zim_notebook,<q-args>)
-command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimList :call zim#explorer#List(g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimNewNote :call zim#note#Create('rightbelow vertical split',g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimOpen :call zim#util#open('rightbelow vertical split',g:zim_notebook,<q-args>)
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimList :call zim#explorer#List('tabnew',g:zim_notebook,<q-args>)
 command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimCopy :call zim#note#Move(1, <f-args>)
 command! -nargs=* -complete=customlist,zim#util#_CompleteNotes ZimMove :call zim#note#Move(0, <f-args>)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteBook ZimCD :exe "let g:zim_notebook='".g:zim_notebooks_dir.'/'.<q-args>."'"
 command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
+
+command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdI ZimCmd :call zim#util#cmd('n',<q-args>,1)
+command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdV -range ZimCmdV :call zim#util#cmd('v',<q-args>,1)
+command! ZimServer :call system('zim --server --gui '.g:zim_notebook .' '.get(g:,'zim_server_options','').' &')
+command! -bar -nargs=1 ZimInjectHtml call s:injecthtml(<q-args>)
+
+command! -nargs=* -complete=customlist,zim#util#_CompleteNotes
+      \ ZimNewNoteFromWeb  call zim#note#Create('tabnew',g:zim_notebook,<q-args>)
+      \ | call s:injecthtml(input('Url ? '))
+
+fu! s:injecthtml(url)
+  if(a:url =~ '^https\?:' )
+    exe 'silent read !curl '.a:url.' 2> /dev/null | pandoc -f html -t zimwiki'
+  elseif ( a:url =~ '.[px]\?html$' )
+    exe 'silent read !cat '.a:url.' | pandoc -f html -t zimwiki'
+  else
+    echo zim#util#gettext('Invalid url')
+  endif
+endfu
+
+" The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
+let g:zim_matchable=get(g:,'zim_matchable',{
+      \'KeyElement': '\(' .
+                    \ '==' .
+                    \ '\|{{' .
+                    \ '\|\*'.
+                    \ '\|\[\(\[\| \)' .
+                    \ '\|\d\+\.\s' .
+                    \ '\|/[.a-zA-Z0-9]\+' .
+                    \ '\)',
+      \'Title': '^\(=\+\).*\1$',
+      \'Checkbox': '^\(\s\{4}\)*\[[ ]\]\(\s\|$\)',
+      \'Li': '^\(\s\{4}\|\t\)*\*\(\s\|$\)',
+      \'NumberedItem': '^\(\s\{4}\|\t\)*\d\+\.\(\s\|$\)',
+      \'Link': '\[\[.*\]\]',
+      \'Img': '{{.*}}',
+      \'File': '\(\~\|\.\|^\| \|{\|\[\)/[.a-zA-Z0-9]\+',
+      \'Url': 'http[s]\?://[.a-zA-Z0-9]\+',
+      \ })
 
 if !has("win32")
   if get(g:,'zim_brutal_update_allowed', 0)
@@ -100,7 +127,6 @@ if !has("win32")
     delcommand ZimBrutalUpdate
   endif
 endif
-
 
 let g:zim_notebooks_dir=get(g:,'zim_notebooks_dir',expand("~/Notebooks"))
 let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
@@ -111,7 +137,25 @@ let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
 "
 "  Read this file if you want to customize zim.vim
 "
-
+"" External programs
+"if !has("win32")
+"else
+let g:zim_img_capture=get(g:,'zim_img_capture','sleep 2; scrot -s')
+" Note : in '\..*$','xdg-open', 1
+"           '\..*$' is a vim regular expression for any file extension
+"           'xdg-open' is the program
+"           1  express cardinality, it says to open one file per program
+"         if <number> is not present,
+"         then all files in a file list matching the .ext
+"         will be openned within the same command
+"         Example of cardinality for a selection of 3 filenames
+"         1 -> 'program file1.ext; program file2.ext; program file3.ext'
+" none or 0 -> 'program file1.ext file2.ext file3.ext'
+let g:zim_img_viewer=get(g:,'zim_img_viewer',['\..*$','xdg-open',1])
+let g:zim_img_editor=get(g:,'zim_img_editor',['\..*$','xdg-open',1])
+let g:zim_ext_viewer=get(g:,'zim_ext_viewer',['\..*$','xdg-open',1])
+let g:zim_ext_editor=get(g:,'zim_ext_editor',['\..*$','xdg-open',1])
+"endif
 ""
 " Actions and keymapping : how it works ?
 " 
@@ -123,68 +167,132 @@ let g:zim_notebook=get(g:,'zim_notebook',g:zim_notebooks_dir)
 "
 " Default configuration provide a good example
 "
-
 "" Actions
+let s:ed=":call zim#editor#"
 let g:zim_edit_actions=get(g:,'zim_edit_actions', {
-      \ '<cr>':{ 'i' : '<bar><Esc>:call zim#editor#CR("<bar>")<Cr>i' },
-      \ 'jump':{ 'n' : ':call zim#editor#JumpToLinkUnderCursor()<Cr>' },
-      \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <Cr>' },
-      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline("."))<Cr>$a' },
-      \ 'title': { 'n':  ':call zim#editor#Title()<CR>' },
-      \ 'header':       { 'n':  ':call zim#editor#CreateHeader()<CR>' },
-      \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<cr>' },
-      \ 'li':           { 'n': ":call zim#editor#Bullet('*')<cr>" },
-      \ 'checkbox':     { 'n': ":call zim#editor#Bullet('[ ]')<cr>" },
-      \ 'checkbox_yes': { 'n': ":call zim#editor#Bullet('[*]')<cr>" },
-      \ 'checkbox_no':  { 'n': ":call zim#editor#Bullet('[x]')<cr>" },
+      \ '<CR>': { 'i' : '<bar><Esc>:silent call zim#editor#CR("<bar>")<CR>i' },
+      \ 'explore':{ 'n' : ':silent call zim#explorer#List("vertical leftabove split", g:zim_notebook, strpart(expand("%:p:h"),len(g:zim_notebooks_dir) +1))<CR>' },
+      \ 'jump':{ 'n' : s:ed.'JumpToLinkUnderCursor()<CR>' },
+      \ 'jump_back':{  'n' : ':exe "buffer ".b:zim_last_backlink <CR>' },
+      \ 'continue_list':{  'n' : ':put=zim#editor#NextBullet(getline(''.''))<CR>$a' },
+      \ 'title': { 'n':  s:ed.'Title()<CR>' },
+      \ 'header':       { 'n':  s:ed.'CreateHeader()<CR>' },
+      \ 'showimg':       {
+      \    'v':  s:ed.'ShowImageBulk(g:zim_img_viewer)<CR>',
+      \    'n':  s:ed.'ShowImage(g:zim_img_viewer)<CR>'
+      \},
+      \ 'editimg':       {
+      \    'v':  s:ed.'ShowImageBulk(g:zim_img_editor)<CR>',
+      \    'n':  s:ed.'ShowImage(g:zim_img_editor)<CR>'
+      \},
+      \ 'showfile':       {
+      \    'v':  s:ed.'ShowFileBulk(g:zim_ext_viewer)<CR>',
+      \    'n':  s:ed.'ShowFile(g:zim_ext_viewer)<CR>'
+      \},
+      \ 'editfile':       {
+      \    'v':  s:ed.'ShowFileBulk(g:zim_ext_editor)<CR>',
+      \    'n':  s:ed.'ShowFile(g:zim_ext_editor)<CR>'
+      \},
+      \ 'all_checkbox_to_li': { 'n': ':%s/^\(\s*\)\[ \]/\1*/<CR>' },
+      \ 'li':           { 'n': s:ed."Bullet('*')<CR>", 'v': s:ed."BulletBulk('*')<CR>" },
+      \ 'checkbox':     { 'n': s:ed."Bullet('[ ]')<CR>", 'v': s:ed."BulletBulk('[ ]')<CR>"},
+      \ 'checkbox_yes': { 'n': s:ed."Bullet('[*]')<CR>", 'v': s:ed."BulletBulk('[*]')<CR>"},
+      \ 'checkbox_no':  { 'n': s:ed."Bullet('[x]')<CR>", 'v': s:ed."BulletBulk('[x]')<CR>"},
+      \ 'checkbox_moved':  { 'n': s:ed."Bullet('[>]')<CR>", 'v': s:ed."BulletBulk('[>]')<CR>"},
+      \ 'date': { 'n': ':exe "norm a".strftime(zim#util#gettext("dateformat"))<CR>'},
+      \ 'datehour': { 'n': ':exe "norm a".strftime(zim#util#gettext("datehourformat"))<CR>'},
       \ 'bold':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("**")<CR>',
-      \   'n': ':call zim#editor#ToggleStyle("**")<CR>'
+      \   'v': s:ed.'ToggleStyleBlock("**")<CR><Esc>',
+      \   'n': s:ed.'ToggleStyle("**")<CR>'
       \ },
       \  'highlight':{
-      \   'v': ':call zim#editor#ToggleStyleBlock("__")<CR>',
-      \   'n': ':call zim#editor#ToggleStyle("__")<CR>'
+      \   'v': s:ed.'ToggleStyleBlock("__")<CR><Esc>',
+      \   'n': s:ed.'ToggleStyle("__")<CR>'
       \ },
       \ 'strike': {
-      \   'v':  ':call zim#editor#ToggleStyleBlock("~~")<CR>',
-      \   'n':  ':call zim#editor#ToggleStyle("~~")<CR>'
+      \   'v':  s:ed.'ToggleStyleBlock("~~")<CR><Esc>',
+      \   'n':  s:ed.'ToggleStyle("~~")<CR>'
       \ },
       \ 'italic': {
-      \   'v' : ':call zim#editor#ToggleStyleBlock("//")<CR>',
-      \   'n' : ':call zim#editor#ToggleStyle("//")<CR>'
+      \   'v' : s:ed.'ToggleStyleBlock("//")<CR><Esc>',
+      \   'n' : s:ed.'ToggleStyle("//")<CR>'
       \ }
       \})
 
 "" Default keymapping
-let g:zim_keymapping=get(g:,'zim_keymapping', {
-      \ '<cr>':'<CR>',
-      \ 'continue_list':'<Leader><CR>',
-      \ 'jump':'<Leader>g',
-      \ 'jump_back':'<Leader>G',
-      \ 'bold':'<Leader>wb',
-      \ 'italic':'<Leader>wi',
-      \ 'highlight':'<Leader>wh',
-      \ 'strike':'<Leader>ws',
-      \ 'title':'<Leader>wt',
-      \ 'header':'<Leader>wH',
-      \ 'all_checkbox_to_li':'<F8>',
-      \ 'li':'<Leader>wl',
-      \ 'checkbox':'<Leader>wc',
-      \ 'checkbox_yes':'<F12>',
-      \ 'checkbox_no':'<S-F12>'
-      \ })
+if get(g:,'zim_dev_keys',0)  
+  let g:zim_keymapping={
+        \ '<cr>':'<cr>',
+        \ 'continue_list':'<leader><cr>',
+        \ 'jump':'gf',
+        \ 'jump_back':'<leader>g',
+        \ 'bold':'<leader>b',
+        \ 'italic':'<leader>i',
+        \ 'highlight':'<leader>h',
+        \ 'strike':'<leader>s',
+        \ 'title':'<leader>t',
+        \ 'header':'<leader>h',
+        \ 'li':'<leader>l',
+        \ 'checkbox':'<leader>c',
+        \ 'checkbox_yes':'<leader>y',
+        \ 'checkbox_no':'<leader>n',
+        \ 'checkbox_moved':'<leader>>',
+        \ 'date':'<leader>d',
+        \ 'datehour':'<leader>d',
+        \ 'explore':'<f9>',
+        \ 'showimg': '<f3>',
+        \ 'editimg': '<s-f3>',
+        \ 'showfile':'<leader><tab>',
+        \ 'editfile':'<leader><s-tab>',
+        \ 'nextkeyelement':'<c-down>',
+        \ 'prevkeyelement':'<c-up>',
+        \ 'nexttitle':'<s-down>',
+        \ 'prevtitle':'<s-up>',
+        \}
+else
+  let g:zim_keymapping=get(g:,'zim_keymapping', {
+        \ '<cr>':'<cr>',
+        \ 'continue_list':'<leader><cr>',
+        \ 'jump':'<leader>g',
+        \ 'jump_back':'<leader>g',
+        \ 'bold':'<leader>wb',
+        \ 'italic':'<leader>wi',
+        \ 'highlight':'<leader>wh',
+        \ 'strike':'<leader>ws',
+        \ 'title':'<leader>wt',
+        \ 'header':'<leader>wh',
+        \ 'all_checkbox_to_li':'<f8>',
+        \ 'li':'<leader>wl',
+        \ 'checkbox':'<leader>wc',
+        \ 'checkbox_yes':'<f12>',
+        \ 'checkbox_no':'<s-f12>',
+        \ 'date':'<leader>wd',
+        \ 'datehour':'<leader>wd',
+        \ 'explore':'<f9>',
+        \ 'showimg':'<f3>',
+        \ 'editimg':'<s-f3>',
+        \ 'showfile':'<f4>',
+        \ 'editfile':'<s-f4>',
+        \ })
+endif
 
 
 "" Zim Wiki format : to be change if wiki format change...
 let g:zim_wiki_version=get(g:,'zim_wiki_version','0.4')
 
 """ Configuration dir of Zim
-if has('win32')
-  let g:zim_config_dir=''
-else
-  let g:zim_config_dir=get(g:,'zim_config_dir',expand('$XDG_CONFIG_HOME/zim'))
+let g:zim_config_dir=get(g:,'zim_config_dir','')
+if (!len(g:zim_config_dir))
+  if has('win32')
+    let g:zim_config_dir=''
+  else
+    let g:zim_config_dir=$XDG_CONFIG_HOME
+    if (!len(g:zim_config_dir))
+      let g:zim_config_dir=expand('$HOME/.config')
+    endif
+    let g:zim_config_dir.='/zim'
+  endif
 endif
-
 "" When g:zim_open_skip_header is set to true (1),
 "" the note is openned on the first line after the header.
 let g:zim_open_skip_header=get(g:,'zim_open_skip_header',1)
@@ -204,14 +312,39 @@ let g:zim_open_jump_to=get(g:,'zim_open_jump_to',
 
 ""
 " Messages
-"
 let g:zim_wiki_lang=get(g:,'zim_wiki_lang','fr')
 let g:zim_wiki_prompt={
       \ 'en' : { 'note_name' : 'Name of the new note',
+      \          'dateformat': "%d/%m/%Y",
+      \          'datehourformat': "%d/%m/%Y %H:%M",
       \          'title_level': "Title level (between 1 and 5 , else remove style)",
       \          'note_out_of_notebook': "Notes shall be created in a notebook... Aborting",
+      \          'input_text': 'Text',
+      \          '?continue_list': 'Create a new bullet under current',
+      \          '?jump': 'Jump to File or Note',
+      \          '?jump_back': 'Jump back...',
+      \          '?bold': 'Format **bold**',
+      \          '?italic': 'Format //italic//',
+      \          '?highlight': 'Format __hightlighted__',
+      \          '?strike': 'Format ~~striked through~~',
+      \          '?title': 'Format = Title =',
+      \          '?header': 'Add Zim file header',
+      \          '?all_checkbox_to_li': 'Convert checkboxes to list',
+      \          '?li': 'Make current line a list item',
+      \          '?checkbox': 'Make an empty checkbox',
+      \          '?checkbox_yes': 'Validate checkbox',
+      \          '?checkbox_no': 'Invalidate checkbox',
+      \          '?date': 'Insert date',
+      \          '?datehour': 'Insert date with hour',
+      \          '?explore': 'View the note explorer',
+      \          '?showimg': 'Open image in an external tool',
+      \          '?editimg': 'Edit image in an external tool',
+      \          '?showfile': 'Open file in an external tool',
+      \          '?editfile': 'Edit file in an external tool',
       \        },
       \ 'fr' : { 'note_name' : 'Nom de la nouvelle note',
+      \          'dateformat': "%d/%m/%Y",
+      \          'datehourformat': "%d/%m/%Y %H:%M",
       \          'title_level': "Niveau de titre (de 1 à 5 , sinon retire le style)",
       \          "'%s' created": "La note %s a été créée",
       \          "NoteBook '%s' created": "Le bloc-note %s a été créée",
@@ -228,6 +361,7 @@ let g:zim_wiki_prompt={
       \          'Modify filter' : 'Modifier le filtre',
       \          'Detect doubles names' : 'Détecter les notes qui porte le même nom',
       \          'Disable doubles detection (%d founds)' : 'Ne plus détecter les doublons (%d restant)',
+      \          'input_text': 'Texte',
       \          'Cannot move a note into itself !': 'Impossible de déplacer une note dans elle-même !',
       \          'Find Next double': 'Atteindre le doublon suivant',
       \          'Delete note': 'Supprimer la note (irreversible)',
@@ -237,5 +371,10 @@ let g:zim_wiki_prompt={
       \          'Place the note under cursor (moving %s)': 'Déplacer la note (%s) sélectionnée à coté de la note sous le curseur',
       \        }
       \}
-
+for s:i in keys(g:zim_matchable) 
+     let g:zim_wiki_prompt['en']['?next'.s:i]='Move cursor to next '.s:i
+endfor
+for s:i in keys(g:zim_matchable) 
+     let g:zim_wiki_prompt['en']['?prev'.s:i]='Move cursor to previous '.s:i
+endfor
 let g:loaded_zim=1

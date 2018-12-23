@@ -12,46 +12,74 @@ Zim Desktop Wiki plugin for Vim
     |_ _|     _|_                                                     
              |_ _|      Zim -  A Desktop Wiki  (for Vim 7.0 or newer) 
 ```
-This version is a beta of what could be published by Jack Mudge
-on VimScript.org.
-
-Current version : 1.0
 
 How to install
 ================================
-You can just add this in your vim rc:
-```
-set rtp+=/path/to/vim-zim
+[Download the zip](https://github.com/luffah/vim-zim/archive/master.zip) and unzip it to `~/vim/pack/org/start/zim`.
+
+
+In **Vim 8+**, you shall just verify this line present in `.vimrc` :
+```vim
+syntax on
+packloadall
 ```
 
-Restart Vim.
+If you use **Vim 7+** , the `runtimepath` shall be updated in `.vimrc` :
+```vim
+syntax on
+set rtp+=~/vim/pack/org/start/zim
+```
 
-Do in command line :
+Verify the plugin is installed :
 
 * To get every commands and parameters ->  `:h Zim`
 * To get a list of your notes -> `:ZimList`
+
+
+Usage
+=====
+
+##### When you want to use Vim to edit your Zim note
+  Just open the `.txt` file.
+
+##### When you want to fetch informations stored in your NoteBooks
+  `:ZimGrep ga` -> show all notes mentioning 'ga'  <br>
+  `:ZimList bu` -> show all notes named 'something-bu'
+
+##### When you want more
+  `:ZimNewNote Notes/Bu/Zo Meu` -> create new note(s) `Bu/Zo Meu.txt` titled 'Zo Meu' (subnote of 'Bu') <br>
+  `:ZimList meu` `m<Down>`(select for move) `m`(move here) -> reorganize notes<br>
+  `:ZimList zo` `d`(detect double) `D`(delete)-> remove a double<br>
+  `:ZimCmd title` -> format the current line as a title (it shows the keybinding before)<br>
+  `:ZimNewNote <Tab>`,  `:ZimList <Tab>`, `:ZimCmd <Tab>` … <br>
 
 About zim-vim
 =============
 This section give some details about the development of this plugin.
 
+Authors : [Jack Mudge](https://github.com/jakykong/vim-zim), [Luffah](https://github.com/luffah/vim-zim)
+```
+License : Public Domain
+          CC-BY-SA for documentation and logo
+
 ## Known issues  
+* When adding note, you shall refresh manually (restart) the index in Zim.
+  In GNU linux see `:h g:zim_update_index_key`.
+* No real Windows Support.
 * Windows :Zim header command uses strftime, but due to working around Microsoft issues,
   it presently only supports Pacific Time Zone .
-* Not an issue with the plugin, but with Zim: There is no way to refresh the index
-  in Zim without restarting Zim. This implies that new files added from Vim will
-  not be visible there until it's restarted.
-  In linux : this can be worked around with XdoTool and by setting a shortcut in Zim. See Doc.
-* Beta Version : Most of the devellopement has been done on Linux.
-  There is no guaranty for navigating and note creation functionnalities to work on Vim Windows.
-* On terminal version of Vim : the notebook explorer is not perfectly redrawed.
 
 ## Changelog
-#### 2016-09-13 - Jack Mudge <Jakykong@theanythingbox.com>
+#### version 0.1 2016-09-13 - Jack Mudge <jakykong@theanythingbox.com>
 * Initial commit and upload to Github. 
+* This Zim plugin provides the following additions to Vim for use with Zim wiki files:
+    * Syntax highlighting and filetype detection for Zim files
+    * Commands to bold, italicize, strike, or mark text.
+    * A command to add a header to new Zim files.
 
-#### 2017-06-13 - Luffah <luffah@runbox.com>
-* v1 : Provide customisation, helpfile, and navigation features
+#### version 1.0 2017-06-13 - Luffah <luffah@runbox.com>
+* Add documentation and logo
+* Provide customisation, helpfile, and navigation features
 * (change) Header accept user dialog instead of count
 * (change) Syntax color reviewed in order to look more like Zim
 * Mod. CreateZimHeader + minimal support of Linux strftime() + automatic title
@@ -61,41 +89,13 @@ This section give some details about the development of this plugin.
 * Multilingual : English, French // translations can be added in file plugin/zim.vim
 * You can now Search and jump to another note
 
+#### version 1.1 2017-07-18 - Luffah <luffah@runbox.com>
+* Allow to open files listed in a note with an external editor
+* Add some tricks in help
 
-## Versions details
-#### Version 0
-```
-Author: Jack Mudge <jakykong@theanythingbox.com>
-URL: https://github.com/jakykong/vim-zim
-Version: 0.1
-License: Public Domain
-
-This Zim plugin provides the following additions to Vim for use with Zim wiki files:
-* Syntax highlighting and filetype detection for Zim files
-* Commands to bold, italicize, strike, or mark text.
-* A command to add a header to new Zim files.
-
-A typical workflow for use with this is one of:
-* Create files in Zim, and use Tools->Edit Source to access Vim.
-* Create files in Vim, and (re)start Zim to read them.
-
-Commands:
-<Leader>wh - Header (accepts count 1-5): ====HEADER==== syntax in file (Normal mode)
-<Leader>wh - Highlight __Highlighted Text__ syntax (Visual mode)
-<Leader>wb - Bold text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-<Leader>wi - Italic text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-<Leader>ws - Strike text (in normal mode, bolds entire line, not including bullets or checkboxes if present)
-:CreateZimHeader() - Creates a Zim header in the current document. Required for Zim to correctly render new files.
-```
-See : https://github.com/jakykong/vim-zim/README for more information
-
-#### Version 1
-```
-Author: Luffah <luffah@runbox.com>
-URL: https://github.com/luffah/vim-zim
-Version: 1.0
-License: Public Domain
-
-What i added is in the doc.
-:h Zim
+#### version 1.2 2018-06-16 - Luffah <luffah@runbox.com>
+* Add codeblock support
+* Add [>] "moving" checkbox
+* Now conceal url link (to only see the title)
+* Can fill a note with the content of a web page.
 ```
