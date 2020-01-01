@@ -172,6 +172,7 @@ function! zim#util#line(goto_instrs, ...)
           endif
         endfor
       endif
+      if has_key(l:j, 'checkpoint') | let l:default=l:i | endif
       if has_key(l:j, 'get') | let l:mem[l:j['get']]=l:i | endif
       if has_key(l:j, 'set') | let l:i=l:mem[l:j['set']] | endif
       if has_key(l:j, 'init') | let l:i=line(l:j['init']) | endif
