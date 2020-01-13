@@ -56,11 +56,10 @@ try
 catch 
   syn match Title /^\(=\{1,6}\)[^=].*\1$/
 endtry
-"😚😰😱
+"🆚 ⍈ 🆙 🆓 🆗 🆔 🆕 😞😚😰😱
 if has('gui')
   let g:zim_emochars={'Checkbox': '😰', 'CheckboxYes': '😊', 'CheckboxNo': '😞', 'CheckboxMoved': '😴'}
 endif
-"🆚 ⍈ 🆙 🆓 🆗 🆔 🆕 😞
 if exists('g:zim_emochars')
 for s:i in keys(g:zim_emochars)
   exe 'syn match zimConcealElt'.s:i.' /\(\t\|    \)\(\[\)\@=/ conceal transparent contained cchar='.g:zim_emochars[s:i]
@@ -136,10 +135,13 @@ fu! s:activate_codeblock()
   " break spell
   let l:languages = get(g:,'zim_codeblock_syntax',
         \{"python": "python","sh": "sh","sourcecode": "sh",  "vim": "vim",
-        \ "html": "html", "css": "css",
+        \ "html": "html", "css": "css", "xml": "xml",
         \ "javascript": "javascript", "sql": "sql"}
         \)
 
+  exe 'syn include @zimcodeblockundef syntax/'.get(g:,'zim_codeblock_default_syntax', 'abc').'.vim contained'
+  syn region zimCodeBlockUndef start="\s*$"ms=e+1
+          \ end="^\s*}}}\ze\s*$"me=e-3 contained contains=@zimcodeblockundef
   " syn region markdownCode matchgroup=Delimiter start="^\s*```.*$" end="^\s*```\ze\s*$" keepend
   for l:i in keys(l:languages)
     let l:l = l:languages[l:i]
@@ -147,18 +149,15 @@ fu! s:activate_codeblock()
     unlet b:current_syntax
     exe 'syn include @zimcodeblock'.l:l.' syntax/'.l:l.'.vim contained'
     exe 'syn region zimCodeBlock'.l:l.' start=|lang="'.l:i.'".*$|ms=e+1'.
-          \' end=|^\s*}}}\ze\s*$|me=e-3 contained contains=ZimCodeBlockEnd,@zimcodeblock'.l:l
+          \' end=|^\s*}}}\ze\s*$|me=e-3 contained contains=@zimcodeblock'.l:l
 
     " markdown code support
     exe 'syn region markdownHighlight'.l:l.'  matchgroup=Delimiter start="^\s*```\s*'.l:l.'\>.*$" end="^\s*```\ze\s*$" keepend contains=@zimcodeblock'.l:l
 
   endfor
-  syn region zimCodeBlock start="^\s*{{{code: " end="^\s*}}}\ze\s*$" matchgroup=Delimiter
-        \ transparent keepend contains=@NoSpell,ZimCodeBlock.*
-  syn match ZimCodeBlockBegin /^\s*{{{code: \s*/ contained
-  syn match ZimCodeBlockEnd /^\s*}}}\s*$/ contained
-  hi def link ZimCodeBlockBegin Comment
-  hi def link ZimCodeBlockEnd Comment
+  syn region zimCodeBlock start="^\s*{{{code" end="^\s*}}}\ze\s*$" matchgroup=Delimiter
+        \ keepend contains=@NoSpell,ZimCodeBlock.*
+  hi def link ZimCodeBlock Comment
 endfu
 call s:activate_codeblock()
 
