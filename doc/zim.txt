@@ -331,6 +331,12 @@ COMMANDS                                                        *zim-commands*
                     to ZimWiki format and add the result at the current
                     position.  
 
+:ZimCleanNote                                       *:ZimCleanNote*
+                   Clean all things are supported in Vim-Zim,
+                   but not in the current version of Zim.
+                   This includes for now:
+                   - markdown codeblock
+
 ==============================================================================
 EDITOR ACTIONS AND KEYBINDINGS                                   *zim-editing*
                                                                  |zim-toc|

@@ -5,6 +5,7 @@
 :ZimImgCapture	zim.txt	/*:ZimImgCapture*
 :ZimImgInsert	zim.txt	/*:ZimImgInsert*
 :ZimInjectHtml	zim.txt	/*:ZimInjectHtml*
+:ZimCleanNote	zim.txt	/*:ZimCleanNote*
 :ZimList	zim.txt	/*:ZimList*
 :ZimListThis	zim.txt	/*:ZimListThis*
 :ZimMatchNext...	zim.txt	/*:ZimMatchNext...*
