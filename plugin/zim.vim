@@ -84,7 +84,7 @@ command! -nargs=1 ZimCreateNoteBook :call zim#note#CreateNoteBook(<q-args>)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdI ZimCmd :call zim#util#cmd('n',<q-args>,1)
 command! -nargs=1 -complete=customlist,zim#util#_CompleteEditCmdV -range ZimCmdV :call zim#util#cmd('v',<q-args>,1)
 command! ZimServer :call system('zim --server --gui '.g:zim_notebook .' '.get(g:,'zim_server_options','').' &')
-command! -bar -nargs=1 ZimInjectHtml call s:injecthtml(<q-args>)
+command! -nargs=1 ZimInjectHtml call s:injecthtml(<q-args>)
 
 command! -nargs=* -complete=customlist,zim#util#_CompleteNotes
       \ ZimNewNoteFromWeb  call zim#note#Create('tabnew',g:zim_notebook,<q-args>)
@@ -99,6 +99,31 @@ fu! s:injecthtml(url)
     echo zim#util#gettext('Invalid url')
   endif
 endfu
+
+
+" Clean all formats that Zim doesn't currently support
+" For now :
+" - markdown codeblocks
+command! ZimCleanNote call s:clean_zim_note()
+fu! s:clean_zim_note()
+  let l:li = 1
+  let l:md_codeblock_start = 0
+  while l:li <= line('$')
+    let l:l=getline(l:li)
+     if l:l =~ '^\s*```\s*\w\+.*$'
+       let l:md_codeblock_start = l:li
+     elseif l:md_codeblock_start && l:l =~ '^\s*```\s*$'
+       call setline(l:li,
+             \ substitute(l:l, '```','}}}',''))
+       call setline(l:md_codeblock_start,
+             \ substitute(getline(l:md_codeblock_start), '```\s*\(\w\+\)','{{{code lang="\1"', ''))
+       let l:md_codeblock_start = 0
+     endif
+
+     let l:li = l:li + 1
+  endwhile
+endfu
+
 
 " The matchable dict activate commands ZimMatchNext.. and ZimMatchPrev...
 let g:zim_matchable=get(g:,'zim_matchable',{

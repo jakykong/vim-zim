@@ -54,6 +54,7 @@ function! zim#explorer#interactiveMove()
     endif
   endif
   call zim#explorer#ListUpdate()
+  redraw!
 endfunction
 
 function! zim#explorer#interactiveRename()

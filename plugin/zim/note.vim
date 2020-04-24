@@ -188,7 +188,7 @@ function! s:setBufferSpecific()
   
   " add commamds avaible for the note
   command! -buffer -nargs=* ZimGrepThis :call zim#explorer#SearchInNotebook(expand('<cword>'))
-  command! -buffer -nargs=* ZimListThis :call zim#explorer#ListNotes(g:zim_notebook,expand('<cword>'))
+  command! -buffer -nargs=* ZimListThis :call zim#explorer#List(g:zim_notebook,expand('<cword>'))
 
   command! -buffer -nargs=1 -complete=file ZimImgInsert :call zim#editor#InsertImage(<q-args>,'')
   command! -buffer -nargs=1 -complete=file ZimImgCapture :call zim#editor#InsertImage(<q-args>,g:zim_img_capture)

@@ -56,11 +56,10 @@ try
 catch 
   syn match Title /^\(=\{1,6}\)[^=].*\1$/
 endtry
-"😚😰😱
+"🆚 ⍈ 🆙 🆓 🆗 🆔 🆕 😞😚😰😱
 if has('gui')
   let g:zim_emochars={'Checkbox': '😰', 'CheckboxYes': '😊', 'CheckboxNo': '😞', 'CheckboxMoved': '😴'}
 endif
-"🆚 ⍈ 🆙 🆓 🆗 🆔 🆕 😞
 if exists('g:zim_emochars')
 for s:i in keys(g:zim_emochars)
   exe 'syn match zimConcealElt'.s:i.' /\(\t\|    \)\(\[\)\@=/ conceal transparent contained cchar='.g:zim_emochars[s:i]
@@ -132,36 +131,39 @@ syn region zimBlock matchgroup=Comment start=/^{{{\a*/ end=/^}}}/ transparent
 " Style : Codeblock (zim add-on)
 fu! s:activate_codeblock()
   " generate by :read!%:p:h/getsourcesfiletype.py
-  " let l:languages = {"java" : "java","dtd" : "dtd","lua" : "lua",".desktop" : "desktop","gtkrc" : "gtkrc","r" : "r","html" : "html","m4" : "m4","javascript" : "javascript","xml" : "xml","ruby" : "ruby","c" : "c","xslt" : "xslt","c++" : "cpp","sh" : "sh",".ini" : "dosini","awk" : "awk","perl" : "perl","css" : "css","cmake" : "cmake","diff" : "diff","changelog" : "changelog","gettext-translation" : "po","python" : "python","sql" : "sql","php" : "php"}
   " the selection is reduced for optimisation and because some syntax files
   " break spell
   let l:languages = get(g:,'zim_codeblock_syntax',
         \{"python": "python","sh": "sh","sourcecode": "sh",  "vim": "vim",
-        \ "html": "html", "css": "css",
+        \ "html": "html", "css": "css", "xml": "xml",
         \ "javascript": "javascript", "sql": "sql"}
         \)
 
+  exe 'syn include @zimcodeblockundef syntax/'.get(g:,'zim_codeblock_default_syntax', 'abc').'.vim contained'
+  syn region zimCodeBlockUndef start="\s*$"ms=e+1
+          \ end="^\s*}}}\ze\s*$"me=e-3 contained contains=@zimcodeblockundef
+  " syn region markdownCode matchgroup=Delimiter start="^\s*```.*$" end="^\s*```\ze\s*$" keepend
   for l:i in keys(l:languages)
     let l:l = l:languages[l:i]
     let b:current_syntax=''
     unlet b:current_syntax
     exe 'syn include @zimcodeblock'.l:l.' syntax/'.l:l.'.vim contained'
     exe 'syn region zimCodeBlock'.l:l.' start=|lang="'.l:i.'".*$|ms=e+1'.
-          \' end=|^}}}|me=e-3 contained contains=@zimcodeblock'.l:l
+          \' end=|^\s*}}}\ze\s*$|me=e-3 contained contains=@zimcodeblock'.l:l
+
+    " markdown code support
+    exe 'syn region markdownHighlight'.l:l.'  matchgroup=Delimiter start="^\s*```\s*'.l:l.'\>.*$" end="^\s*```\ze\s*$" keepend contains=@zimcodeblock'.l:l
+
   endfor
-  syn match ZimCodeBlockBegin /^{{{code: /
-  syn match ZimCodeBlockEnd /^}}}$/
-  hi def link ZimCodeBlockBegin Comment
-  hi def link ZimCodeBlockEnd Comment
-  syn region zimCodeBlock
-        \ start="^{{{code: " end="^}}}"
-        \ transparent keepend contains=@NoSpell,ZimCodeBlock.*
+  syn region zimCodeBlock start="^\s*{{{code" end="^\s*}}}\ze\s*$" matchgroup=Delimiter
+        \ keepend contains=@NoSpell,ZimCodeBlock.*
+  hi def link ZimCodeBlock Comment
 endfu
 call s:activate_codeblock()
 
 " Style : verbatim
 syn region zimStyleVerbatim start=/''/ end=/''/ contains=@NoSpell
-syn region zimStyleVerbatim start=/^'''/ end=/'''/ contains=@NoSpell
+syn region zimStyleVerbatim start=/^\s*'''/ end=/\s*'''/ contains=@NoSpell
 hi def link zimStyleVerbatim	SpecialComment
 
 " Style : sub and sup
@@ -187,7 +189,7 @@ syn match zimInlineArrowChar /\( \)\@<=\(-->\)\( \)\@=/ conceal cchar=→ transp
 syn region zimInlineHiddenText start=/\z([…–]\|\.\.\.\)[(]/ end=/[)]\z1/ conceal cchar=…  transparent excludenl
 
 " IdentedDetails 
-syn region zimwikiIndentedCheckboxDetails start=/^\z(\( \{4\}\|\t\)*\)\(\[[x*]\]\)[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\z1\?\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
+syn region zimwikiIndentedCheckboxDetails start=/^\z(\( \{4\}\|\t\)*\)\(\[[x*]\]\)[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\z1\?\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.*,zimwikiIndentedCheckboxDetails,zimwikiIndentedDetails fold transparent
 syn region zimwikiIndentedDetails start=/^\S[^:{}[\]]* [^:{}[\]]*\(:.*\|\\\s*$\)\n\s*\S/ end=/^\( \{0,3\}\)\S/me=s-1 contains=zimElt.*,zimStyle.*,zimInline.* fold transparent
 "syn region zimIndentedfold start=/^\( \{4,\}\|\t\)\S/ end=/^\s\{0,3\}\S/me=s-1 contained fold transparent contains=zimElt.*,zimStyle.*,zimInline.*
 "syn region zimwikiIndentedDetails start=/^\( \{4\}|\t\)*\(\[.\]\)\?[_a-z 0-9]*:/ end=/^\s\{0,3\}\S/me=s-1 contains=zimIndentedFold,zimElt.*,zimStyle.*,zimInline.* transparent
